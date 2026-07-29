@@ -1,0 +1,13 @@
+{
+    "_comment": "Tambahkan package di bawah ini ke composer.json project Laravel Anda, lalu jalankan `composer update`. File ini BUKAN composer.json lengkap - gunakan sebagai referensi tambahan saja.",
+    "require_tambahan": {
+        "livewire/livewire": "^3.5",
+        "phpoffice/phpspreadsheet": "^1.29"
+    },
+    "cara_pakai": [
+        "composer create-project laravel/laravel pantau-sepangkep",
+        "cd pantau-sepangkep",
+        "composer require livewire/livewire phpoffice/phpspreadsheet",
+        "Lalu copy seluruh folder app/, database/, resources/, routes/, public/images dari paket ini ke dalam project Laravel Anda (timpa file yang sama)."
+    ]
+}
