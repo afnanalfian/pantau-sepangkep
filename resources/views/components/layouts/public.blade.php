@@ -10,46 +10,77 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     @livewireStyles
     <style>
-        body { font-family: 'Inter', sans-serif; background:#F5F7FA; }
+        body { font-family: 'Inter', sans-serif; background:#F8FAFC; }
         .font-display { font-family: 'Space Grotesk', sans-serif; }
     </style>
 </head>
 <body class="text-slate-800 antialiased">
 
-    <header class="sticky top-0 z-40 bg-[#0B2A4A] border-b border-white/10">
-        <div class="max-w-7xl mx-auto px-5 lg:px-8 h-16 flex items-center justify-between">
-            <a href="{{ route('landing') }}" class="flex items-center gap-3 group">
-                <div class="flex items-center gap-2">
-                    <img src="{{ asset('images/logo_bps.png') }}" alt="Logo BPS" class="h-9 w-auto" onerror="this.style.display='none'">
-                    <img src="{{ asset('images/logo_sensus.png') }}" alt="Logo Sensus Ekonomi 2026" class="h-9 w-auto" onerror="this.style.display='none'">
-                </div>
-                <div class="hidden sm:block leading-tight border-l border-white/20 pl-3">
-                    <div class="font-display font-bold text-white text-[15px] tracking-tight">PANTAU SEPANGKEP</div>
-                    <div class="text-[10px] text-white/60 uppercase tracking-wider">Sensus Ekonomi 2026 · Pangkep</div>
-                </div>
-            </a>
+    <!-- ============================================ -->
+    <!-- HEADER - Mobile First -->
+    <!-- ============================================ -->
+    <header class="sticky top-0 z-40 bg-white border-b border-orange-200">
+        <div class="px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-14 sm:h-16">
+                
+                <!-- Logo - Compact untuk mobile -->
+                <a href="{{ route('landing') }}" class="flex items-center gap-2 flex-shrink-0">
+                    <div class="flex items-center gap-1.5 sm:gap-2">
+                        <img src="{{ asset('images/logo_bps.png') }}" alt="Logo BPS" class="h-7 sm:h-8 w-auto" onerror="this.style.display='none'">
+                        <img src="{{ asset('images/logo_sensus.png') }}" alt="Logo Sensus" class="h-7 sm:h-8 w-auto" onerror="this.style.display='none'">
+                    </div>
+                    <div class="hidden sm:block border-l border-orange-200 pl-3">
+                        <div class="font-display font-bold text-orange-600 text-sm tracking-tight">PANTAU SEPANGKEP</div>
+                        <div class="text-[10px] text-slate-400 uppercase tracking-wider">Sensus Ekonomi 2026</div>
+                    </div>
+                </a>
 
-            <nav class="flex items-center gap-1">
-                <a href="{{ route('dashboard.publik') }}" class="px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition {{ request()->routeIs('dashboard.publik') ? 'bg-white/10 text-white' : '' }}">Dashboard</a>
-                <a href="{{ route('qna.publik') }}" class="px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition {{ request()->routeIs('qna.publik') ? 'bg-white/10 text-white' : '' }}">QnA</a>
-                <a href="{{ route('pengumuman.publik') }}" class="px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition {{ request()->routeIs('pengumuman.*') ? 'bg-white/10 text-white' : '' }}">Pengumuman</a>
-                @if(session('role'))
-                    <a href="{{ route('pegawai.home') }}" class="ml-2 px-3.5 py-2 rounded-lg text-sm font-semibold bg-[#0F7B8A] text-white hover:bg-[#0d6b78] transition">Portal Pegawai</a>
-                @else
-                    <a href="{{ route('login') }}" class="ml-2 px-3.5 py-2 rounded-lg text-sm font-semibold bg-[#E2A63B] text-[#0B2A4A] hover:bg-[#d69a2f] transition">Login Pegawai</a>
-                @endif
-            </nav>
+                <!-- Navigation - Mobile friendly -->
+                <nav class="flex items-center gap-0.5 sm:gap-1">
+                    <a href="{{ route('dashboard.publik') }}" 
+                       class="px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium text-slate-600 hover:text-orange-600 hover:bg-orange-50 transition {{ request()->routeIs('dashboard.publik') ? 'bg-orange-50 text-orange-600' : '' }}">
+                        <span class="hidden sm:inline">Dashboard</span>
+                        <span class="sm:hidden">Home</span>
+                    </a>
+                    <a href="{{ route('qna.publik') }}" 
+                       class="px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium text-slate-600 hover:text-orange-600 hover:bg-orange-50 transition {{ request()->routeIs('qna.publik') ? 'bg-orange-50 text-orange-600' : '' }}">
+                        QnA
+                    </a>
+                    <a href="{{ route('pengumuman.publik') }}" 
+                       class="hidden sm:inline-block px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-orange-600 hover:bg-orange-50 transition {{ request()->routeIs('pengumuman.*') ? 'bg-orange-50 text-orange-600' : '' }}">
+                        Pengumuman
+                    </a>
+                    @if(session('role'))
+                        <a href="{{ route('pegawai.home') }}" class="ml-1 sm:ml-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-orange-600 text-white hover:bg-orange-700 transition whitespace-nowrap">
+                            <span class="hidden sm:inline">Portal Pegawai</span>
+                            <span class="sm:hidden">Pegawai</span>
+                        </a>
+                    @else
+                        <a href="{{ route('login') }}" class="ml-1 sm:ml-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium bg-orange-600 text-white hover:bg-orange-700 transition whitespace-nowrap">
+                            Login
+                        </a>
+                    @endif
+                </nav>
+            </div>
         </div>
     </header>
 
+    <!-- ============================================ -->
+    <!-- MAIN CONTENT -->
+    <!-- ============================================ -->
     <main>
         {{ $slot }}
     </main>
 
-    <footer class="mt-16 border-t border-slate-200 bg-white">
-        <div class="max-w-7xl mx-auto px-5 lg:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
-            <p>&copy; {{ date('Y') }} BPS Kabupaten Pangkajene dan Kepulauan &mdash; Pantau Sepangkep, Sensus Ekonomi 2026.</p>
-            <p class="font-medium text-slate-400">Dibangun untuk mendukung transparansi data lapangan.</p>
+    <!-- ============================================ -->
+    <!-- FOOTER - Mobile First -->
+    <!-- ============================================ -->
+    <footer class="mt-16 bg-slate-900 text-white">
+        <div class="px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col items-center gap-2 py-6 sm:py-8 text-xs text-slate-400 text-center">
+                <p>&copy; {{ date('Y') }} BPS Kabupaten Pangkajene</p>
+                <p class="text-orange-400 text-[10px] sm:text-xs">Pantau Sepangkep · Sensus Ekonomi 2026</p>
+            </div>
         </div>
     </footer>
 

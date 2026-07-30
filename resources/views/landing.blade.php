@@ -1,67 +1,109 @@
 <x-layouts.public :title="'Beranda'">
 
-<section class="relative overflow-hidden bg-[#0B2A4A]">
-    <div class="absolute inset-0 opacity-[0.07]" style="background-image:radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 28px 28px;"></div>
+<!-- ============================================ -->
+<!-- HERO SECTION - Mobile First -->
+<!-- ============================================ -->
+<section class="bg-slate-900 border-b border-orange-800">
+    <div class="px-4 sm:px-6 lg:px-8">
+        <div class="py-12 sm:py-16 lg:py-20 text-center">
+            
+            <!-- Badge - Compact mobile -->
+            <div class="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full bg-orange-600/20 border border-orange-600/30 text-orange-400 text-[10px] sm:text-xs font-medium uppercase tracking-wider mb-4 sm:mb-6">
+                <span class="relative flex h-1.5 w-1.5">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-orange-400"></span>
+                </span>
+                <span class="hidden sm:inline">Sensus Ekonomi 2026</span>
+                <span class="sm:hidden">SE 2026</span>
+            </div>
 
-    <div class="relative max-w-5xl mx-auto px-5 lg:px-8 pt-20 pb-28 text-center">
-        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/15 text-white/80 text-xs font-semibold uppercase tracking-wider mb-7">
-            <span class="relative flex h-2 w-2">
-                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#E2A63B] opacity-75"></span>
-                <span class="relative inline-flex rounded-full h-2 w-2 bg-[#E2A63B]"></span>
-            </span>
-            Sensus Ekonomi 2026 &middot; Live Monitoring
+            <!-- Title - Responsive font -->
+            <h1 class="font-display font-bold text-3xl sm:text-4xl lg:text-5xl text-white tracking-tight">
+                PANTAU <span class="text-orange-400">SEPANGKEP</span>
+            </h1>
+            
+            <p class="mt-2 sm:mt-3 text-slate-400 text-xs sm:text-sm max-w-2xl mx-auto px-2">
+                Portal pemantauan Sensus Ekonomi 2026 di BPS Kabupaten Pangkajene dan Kepulauan.
+            </p>
+
+            <!-- CTA - Touch friendly -->
+            <div class="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-3 px-4 sm:px-0">
+                <a href="{{ route('dashboard.publik') }}" 
+                   class="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-2.5 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 transition active:scale-95 text-center">
+                    Dashboard
+                </a>
+                <a href="{{ route('qna.publik') }}" 
+                   class="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-2.5 border border-slate-700 text-slate-300 rounded-lg text-sm font-medium hover:bg-slate-800 transition active:scale-95 text-center">
+                    Tanya Jawab
+                </a>
+            </div>
         </div>
-
-        <h1 class="font-display font-bold text-4xl sm:text-6xl text-white tracking-tight leading-[1.05]">
-            PANTAU SEPANGKEP
-        </h1>
-        <p class="mt-5 text-white/70 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
-            Portal informasi dan pemantauan kegiatan Sensus Ekonomi 2026
-            di BPS Kabupaten Pangkajene dan Kepulauan &mdash; progres lapangan, kinerja petugas,
-            dan kualitas data dalam satu tempat.
-        </p>
     </div>
 </section>
 
-<section class="relative -mt-16 pb-20">
-    <div class="max-w-5xl mx-auto px-5 lg:px-8">
-        <div class="grid sm:grid-cols-3 gap-5">
+<!-- ============================================ -->
+<!-- CARDS SECTION - Mobile First -->
+<!-- ============================================ -->
+<section class="py-8 sm:py-12 lg:py-16 bg-white">
+    <div class="px-4 sm:px-6 lg:px-8">
+        
+        <!-- Section Header -->
+        <div class="text-center mb-6 sm:mb-8">
+            <span class="inline-block px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-orange-100 text-orange-700 text-[10px] sm:text-xs font-semibold uppercase tracking-wider mb-2 sm:mb-3">
+                Akses Cepat
+            </span>
+            <h2 class="font-display font-semibold text-xl sm:text-2xl text-slate-800">Layanan Informasi</h2>
+            <p class="text-xs sm:text-sm text-slate-400 mt-1">Akses cepat informasi seputar Sensus Ekonomi 2026</p>
+        </div>
 
-            <a href="{{ route('dashboard.publik') }}" class="group bg-white rounded-2xl p-7 shadow-lg shadow-slate-900/5 border border-slate-100 hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
-                <div class="w-11 h-11 rounded-xl bg-[#0F7B8A]/10 flex items-center justify-center text-[#0F7B8A] mb-5">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg>
+        <!-- Cards Grid - Stack on mobile -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+
+            <!-- Card 1 -->
+            <a href="{{ route('dashboard.publik') }}" 
+               class="group bg-white rounded-xl p-4 sm:p-5 lg:p-6 border border-slate-200 hover:border-orange-300 hover:shadow-md transition active:scale-[0.98]">
+                <div class="w-9 sm:w-10 h-9 sm:h-10 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600 mb-3 sm:mb-4 group-hover:bg-orange-600 group-hover:text-white transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 sm:w-5 h-4 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/>
+                    </svg>
                 </div>
-                <h3 class="font-display font-bold text-lg text-[#0B2A4A] mb-1.5">Dashboard Publik</h3>
-                <p class="text-sm text-slate-500 leading-relaxed">Progres pendataan, kinerja PPL/PML, dan produktivitas harian secara terbuka.</p>
-                <span class="inline-flex items-center gap-1.5 mt-4 text-sm font-semibold text-[#0F7B8A]">Buka dashboard <span class="group-hover:translate-x-1 transition-transform">&rarr;</span></span>
+                <h3 class="font-display font-semibold text-slate-900 text-sm sm:text-base mb-0.5 sm:mb-1 group-hover:text-orange-600 transition">Dashboard Publik</h3>
+                <p class="text-xs sm:text-sm text-slate-500 leading-relaxed">Progres pendataan dan kinerja petugas secara real-time.</p>
+                <span class="inline-block mt-2 sm:mt-3 text-xs sm:text-sm font-medium text-orange-600 group-hover:translate-x-1 transition">Lihat →</span>
             </a>
 
-            <a href="{{ route('qna.publik') }}" class="group bg-white rounded-2xl p-7 shadow-lg shadow-slate-900/5 border border-slate-100 hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
-                <div class="w-11 h-11 rounded-xl bg-[#E2A63B]/10 flex items-center justify-center text-[#E2A63B] mb-5">
-                    <x-icon name="chat" class="w-6 h-6" />
+            <!-- Card 2 -->
+            <a href="{{ route('qna.publik') }}" 
+               class="group bg-white rounded-xl p-4 sm:p-5 lg:p-6 border border-slate-200 hover:border-orange-300 hover:shadow-md transition active:scale-[0.98]">
+                <div class="w-9 sm:w-10 h-9 sm:h-10 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600 mb-3 sm:mb-4 group-hover:bg-orange-600 group-hover:text-white transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 sm:w-5 h-4 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                    </svg>
                 </div>
-                <h3 class="font-display font-bold text-lg text-[#0B2A4A] mb-1.5">QnA</h3>
-                <p class="text-sm text-slate-500 leading-relaxed">Punya pertanyaan seputar sensus? Tanyakan, dijawab langsung oleh admin/INDA.</p>
-                <span class="inline-flex items-center gap-1.5 mt-4 text-sm font-semibold text-[#E2A63B]">Ajukan pertanyaan <span class="group-hover:translate-x-1 transition-transform">&rarr;</span></span>
+                <h3 class="font-display font-semibold text-slate-900 text-sm sm:text-base mb-0.5 sm:mb-1 group-hover:text-orange-600 transition">Tanya Jawab</h3>
+                <p class="text-xs sm:text-sm text-slate-500 leading-relaxed">Ajukan pertanyaan seputar sensus kepada admin.</p>
+                <span class="inline-block mt-2 sm:mt-3 text-xs sm:text-sm font-medium text-orange-600 group-hover:translate-x-1 transition">Lihat →</span>
             </a>
 
-            @php $pengumumanBaru = \App\Models\Pengumuman::where('created_at', '>=', now()->subDays(3))->count(); @endphp
-            <a href="{{ route('pengumuman.publik') }}" class="group relative bg-white rounded-2xl p-7 shadow-lg shadow-slate-900/5 border border-slate-100 hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
-                @if($pengumumanBaru > 0)
-                    <span class="absolute -top-2.5 -right-2.5 min-w-[26px] h-[26px] px-1.5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center shadow-md shadow-red-500/30 ring-2 ring-white">{{ $pengumumanBaru }}</span>
-                @endif
-                <div class="w-11 h-11 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 mb-5">
-                    <x-icon name="megaphone" class="w-6 h-6" />
+            <!-- Card 3 -->
+            <a href="{{ route('pengumuman.publik') }}" 
+               class="group bg-white rounded-xl p-4 sm:p-5 lg:p-6 border border-slate-200 hover:border-orange-300 hover:shadow-md transition active:scale-[0.98]">
+                <div class="w-9 sm:w-10 h-9 sm:h-10 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600 mb-3 sm:mb-4 group-hover:bg-orange-600 group-hover:text-white transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 sm:w-5 h-4 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/>
+                    </svg>
                 </div>
-                <h3 class="font-display font-bold text-lg text-[#0B2A4A] mb-1.5">Pengumuman</h3>
-                <p class="text-sm text-slate-500 leading-relaxed">Informasi resmi terbaru untuk petugas maupun pegawai.</p>
-                <span class="inline-flex items-center gap-1.5 mt-4 text-sm font-semibold text-emerald-600">Lihat pengumuman <span class="group-hover:translate-x-1 transition-transform">&rarr;</span></span>
+                <h3 class="font-display font-semibold text-slate-900 text-sm sm:text-base mb-0.5 sm:mb-1 group-hover:text-orange-600 transition">Pengumuman</h3>
+                <p class="text-xs sm:text-sm text-slate-500 leading-relaxed">Informasi resmi terbaru untuk pegawai.</p>
+                <span class="inline-block mt-2 sm:mt-3 text-xs sm:text-sm font-medium text-orange-600 group-hover:translate-x-1 transition">Lihat →</span>
             </a>
         </div>
 
-        <div class="mt-5 text-center">
-            <a href="{{ route('login') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-[#0B2A4A] hover:text-[#0F7B8A] transition">
-                Login sebagai Pegawai <span>&rarr;</span>
+        <!-- Login Link -->
+        <div class="mt-6 sm:mt-8 text-center">
+            <a href="{{ route('login') }}" class="text-xs sm:text-sm text-slate-400 hover:text-orange-600 transition group">
+                Login Pegawai 
+                <span class="inline-block group-hover:translate-x-1 transition">→</span>
             </a>
         </div>
     </div>
