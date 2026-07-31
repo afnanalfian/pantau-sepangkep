@@ -71,6 +71,6 @@ class AnomaliMikro extends Model
         }
         
         // Menampilkan assignment_id saja sebagai link
-        return $this->assignment_id;
+        return "Buka Link Fasih";
     }
 }
