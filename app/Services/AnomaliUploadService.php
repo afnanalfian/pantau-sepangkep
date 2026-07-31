@@ -136,7 +136,64 @@ class AnomaliUploadService
         $headerIdx = $this->findHeaderRow($rows, 'No');
         $headers = array_map(fn ($h) => trim((string) $h), $rows[$headerIdx]);
 
-        $nameCol = $jenis === 'usaha' ? 'Nama Usaha' : 'Nama KRT';
+        // Mapping untuk berbagai kemungkinan nama kolom
+        $columnMapping = [
+            'nama' => ['Nama KRT', 'Nama Kepala Keluarga', 'Nama KK', 'Nama Usaha', 'Nama Perusahaan', 'Nama'],
+            'kdprov' => ['Kode Prov', 'Kode Provinsi', 'Provinsi Kode'],
+            'nmprov' => ['Nama Provinsi', 'Provinsi', 'Nama Prov'],
+            'kdkab' => ['Kode Kab/Kota', 'Kode Kabupaten', 'Kode Kota', 'Kab/Kota Kode'],
+            'nmkab' => ['Nama Kab/Kota', 'Kabupaten', 'Kota', 'Nama Kabupaten'],
+            'kdkec' => ['Kode Kec', 'Kode Kecamatan', 'Kecamatan Kode'],
+            'nmkec' => ['Nama Kecamatan', 'Kecamatan'],
+            'kddesa' => ['Kode Desa', 'Kode Kelurahan', 'Desa/Kel Kode'],
+            'nmdesa' => ['Nama Desa/Kel', 'Nama Desa', 'Nama Kelurahan', 'Desa/Kel'],
+            'kode_sls' => ['Kode SLS', 'SLS'],
+            'sub_sls' => ['Sub SLS', 'SLS Sub'],
+            'assignment_id' => ['Assignment ID', 'ID Assignment', 'Assignment'],
+            'nama_anomali' => ['Nama Anomali', 'Anomali', 'Jenis Anomali'],
+            'id_petugas' => ['ID Petugas', 'Petugas ID', 'NIP Petugas'],
+            'email_petugas' => ['Email Petugas', 'Petugas Email', 'Email'],
+            'link_fasih' => ['Link Fasih', 'Fasih Link', 'URL Fasih'],
+            'no' => ['No', 'Nomor', 'Urutan'],
+        ];
+
+        // Fungsi untuk mencari kolom berdasarkan mapping
+        $findColumn = function(string $field, array $headers) use ($columnMapping): ?int {
+            $possibleNames = $columnMapping[$field] ?? [];
+            foreach ($possibleNames as $possibleName) {
+                $index = array_search($possibleName, $headers);
+                if ($index !== false) {
+                    return $index;
+                }
+                // Coba case-insensitive
+                foreach ($headers as $idx => $header) {
+                    if (strtolower(trim($header)) === strtolower(trim($possibleName))) {
+                        return $idx;
+                    }
+                }
+            }
+            return null;
+        };
+
+        // Mapping field => column index
+        $colMap = [];
+        foreach (array_keys($columnMapping) as $field) {
+            $colMap[$field] = $findColumn($field, $headers);
+        }
+
+        // Validasi: pastikan kolom penting ada
+        $requiredFields = ['nama', 'assignment_id'];
+        $missingRequired = [];
+        foreach ($requiredFields as $field) {
+            if ($colMap[$field] === null) {
+                $possibleNames = implode(' atau ', $columnMapping[$field] ?? []);
+                $missingRequired[] = "$field ($possibleNames)";
+            }
+        }
+
+        if (!empty($missingRequired)) {
+            throw new \Exception('Kolom wajib tidak ditemukan: ' . implode(', ', $missingRequired));
+        }
 
         $insert = [];
         for ($i = $headerIdx + 1; $i < count($rows); $i++) {
@@ -144,42 +201,52 @@ class AnomaliUploadService
             if ($this->isLabelRow($row)) continue;
             if (empty(array_filter($row, fn ($v) => $v !== null && $v !== ''))) continue;
 
-            $assoc = [];
-            foreach ($headers as $idx => $h) {
-                if ($h === '') continue;
-                $assoc[$h] = $row[$idx] ?? null;
-            }
+            // Ambil nilai dari kolom yang sudah dipetakan
+            $getValue = function(string $field) use ($row, $colMap) {
+                $index = $colMap[$field] ?? null;
+                if ($index === null || !isset($row[$index])) {
+                    return null;
+                }
+                return trim((string) $row[$index]);
+            };
 
-            $assignmentId = trim((string) ($assoc['Assignment ID'] ?? ''));
-            if ($assignmentId === '') continue;
+            $assignmentId = $getValue('assignment_id');
+            if (empty($assignmentId)) continue;
 
-            $petugas = trim((string) ($assoc['ID Petugas'] ?? ''));
-            $emailPetugas = trim((string) ($assoc['Email Petugas'] ?? ''));
+            $nama = $getValue('nama');
+            if (empty($nama)) continue;
+
+            $petugas = $getValue('id_petugas');
+            $emailPetugas = $getValue('email_petugas');
 
             $insert[] = [
                 'anomali_batch_id' => $batch->id,
                 'jenis' => $jenis,
-                'no' => is_numeric($assoc['No'] ?? null) ? (int) $assoc['No'] : null,
-                'nama' => trim((string) ($assoc[$nameCol] ?? '')),
-                'kdprov' => trim((string) ($assoc['Kode Prov'] ?? '')),
-                'nmprov' => trim((string) ($assoc['Nama Provinsi'] ?? '')),
-                'kdkab' => trim((string) ($assoc['Kode Kab/Kota'] ?? '')),
-                'nmkab' => trim((string) ($assoc['Nama Kab/Kota'] ?? '')),
-                'kdkec' => trim((string) ($assoc['Kode Kec'] ?? '')),
-                'nmkec' => trim((string) ($assoc['Nama Kecamatan'] ?? '')),
-                'kddesa' => trim((string) ($assoc['Kode Desa'] ?? '')),
-                'nmdesa' => trim((string) ($assoc['Nama Desa/Kel'] ?? '')),
-                'kode_sls' => trim((string) ($assoc['Kode SLS'] ?? '')),
-                'sub_sls' => trim((string) ($assoc['Sub SLS'] ?? '')),
+                'no' => is_numeric($getValue('no')) ? (int) $getValue('no') : null,
+                'nama' => $nama,
+                'kdprov' => $getValue('kdprov') ?? '',
+                'nmprov' => $getValue('nmprov') ?? '',
+                'kdkab' => $getValue('kdkab') ?? '',
+                'nmkab' => $getValue('nmkab') ?? '',
+                'kdkec' => $getValue('kdkec') ?? '',
+                'nmkec' => $getValue('nmkec') ?? '',
+                'kddesa' => $getValue('kddesa') ?? '',
+                'nmdesa' => $getValue('nmdesa') ?? '',
+                'kode_sls' => $getValue('kode_sls') ?? '',
+                'sub_sls' => $getValue('sub_sls') ?? '',
                 'assignment_id' => $assignmentId,
-                'nama_anomali' => trim((string) ($assoc['Nama Anomali'] ?? '')),
+                'nama_anomali' => $getValue('nama_anomali') ?? '',
                 'tindak_lanjut' => 'belum',
                 'id_petugas' => ($petugas === '-' || $petugas === '') ? null : $petugas,
                 'email_petugas' => ($emailPetugas === '-' || $emailPetugas === '') ? null : strtolower($emailPetugas),
-                'link_fasih' => trim((string) ($assoc['Link Fasih'] ?? '')),
+                'link_fasih' => $getValue('link_fasih') ?? '',
                 'created_at' => now(),
                 'updated_at' => now(),
             ];
+        }
+
+        if (empty($insert)) {
+            throw new \Exception('Tidak ada data yang valid untuk diimport.');
         }
 
         foreach (array_chunk($insert, 300) as $chunk) {
