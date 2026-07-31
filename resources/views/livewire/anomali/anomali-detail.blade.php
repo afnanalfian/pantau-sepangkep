@@ -29,7 +29,7 @@
     @else
         {{-- Kirim variable modal secara eksplisit supaya tidak pernah "Undefined variable"
              walaupun ada masalah cache/scope pada @include --}}
-        @include('livewire.anomali._data-mikro', [
+        @include('livewire.anomali._data-mikro', [  
             'mikros' => $mikros,
             'mitraMap' => $mitraMap,
             'kecamatanOptions' => $kecamatanOptions,
