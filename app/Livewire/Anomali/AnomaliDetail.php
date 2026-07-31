@@ -26,6 +26,12 @@ class AnomaliDetail extends Component
     public string $search = '';
     public int $perPage = 10;
 
+    // Modal properties
+    public bool $showModal = false;
+    public ?int $selectedAnomaliId = null;
+    public ?string $selectedStatus = null;
+    public ?string $modalAnomaliName = null;
+
     public function mount(AnomaliBatch $batch)
     {
         $this->batch = $batch;
@@ -47,21 +53,62 @@ class AnomaliDetail extends Component
         $this->view = 'dashboard';
     }
 
-    public function tandaiSelesai(int $id)
+    // Buka modal untuk memilih status
+    public function bukaModalTindakLanjut(int $id)
     {
         $this->authorizeAksi();
-        AnomaliMikro::whereKey($id)->update(['tindak_lanjut' => 'sudah', 'tindak_lanjut_at' => now()]);
+        $anomali = AnomaliMikro::find($id);
+        if ($anomali) {
+            $this->selectedAnomaliId = $id;
+            $this->modalAnomaliName = $anomali->nama;
+            $this->selectedStatus = null;
+            $this->showModal = true;
+        }
+    }
+
+    // Tutup modal
+    public function tutupModal()
+    {
+        $this->showModal = false;
+        $this->selectedAnomaliId = null;
+        $this->selectedStatus = null;
+        $this->modalAnomaliName = null;
+    }
+
+    // Proses tandai selesai dengan status
+    public function prosesTandaiSelesai()
+    {
+        $this->authorizeAksi();
+        
+        $this->validate([
+            'selectedStatus' => 'required|in:revoked_pml,diselesaikan_admin,reject_admin',
+        ], [
+            'selectedStatus.required' => 'Silakan pilih status penyelesaian.',
+        ]);
+
+        AnomaliMikro::whereKey($this->selectedAnomaliId)->update([
+            'tindak_lanjut' => 'sudah',
+            'tindak_lanjut_at' => now(),
+            'status_penyelesaian' => $this->selectedStatus,
+        ]);
+
+        $this->tutupModal();
+        session()->flash('success', 'Anomali berhasil ditandai selesai dengan status: ' . AnomaliMikro::statusOptions()[$this->selectedStatus]);
     }
 
     public function batalkanTindakLanjut(int $id)
     {
         $this->authorizeAksi();
-        AnomaliMikro::whereKey($id)->update(['tindak_lanjut' => 'belum', 'tindak_lanjut_at' => null]);
+        AnomaliMikro::whereKey($id)->update([
+            'tindak_lanjut' => 'belum',
+            'tindak_lanjut_at' => null,
+            'status_penyelesaian' => null,
+        ]);
+        session()->flash('info', 'Tindak lanjut berhasil dibatalkan.');
     }
 
     protected function authorizeAksi()
     {
-        // semua pegawai yang login boleh menandai status tindak lanjut (bukan hanya admin anomali)
         abort_unless(session('role'), 403);
     }
 
@@ -78,7 +125,8 @@ class AnomaliDetail extends Component
             $q->where(function ($qq) use ($s) {
                 $qq->where('nama', 'like', "%{$s}%")
                     ->orWhere('assignment_id', 'like', "%{$s}%")
-                    ->orWhere('kode_sls', 'like', "%{$s}%");
+                    ->orWhere('kode_sls', 'like', "%{$s}%")
+                    ->orWhere('status_penyelesaian', 'like', "%{$s}%");
             });
         }
 
@@ -92,6 +140,14 @@ class AnomaliDetail extends Component
         $byJenis = $mikros->groupBy('jenis')->map->count();
         $byAnomali = $mikros->groupBy('nama_anomali')->map->count()->sortDesc()->take(10);
         $byStatus = $mikros->groupBy('tindak_lanjut')->map->count();
+        
+        // Tambahkan statistik status penyelesaian
+        $byStatusPenyelesaian = $mikros->whereNotNull('status_penyelesaian')
+            ->groupBy('status_penyelesaian')
+            ->map(fn($g) => [
+                'count' => $g->count(),
+                'label' => AnomaliMikro::statusOptions()[$g->first()->status_penyelesaian] ?? $g->first()->status_penyelesaian,
+            ]);
 
         $byKecamatan = $mikros->groupBy('nmkec')->map(function ($g, $kec) {
             $total = $g->count();
@@ -110,6 +166,7 @@ class AnomaliDetail extends Component
             'byJenis' => $byJenis,
             'byAnomali' => $byAnomali,
             'byStatus' => $byStatus,
+            'byStatusPenyelesaian' => $byStatusPenyelesaian,
             'byKecamatan' => $byKecamatan,
         ];
     }
@@ -130,10 +187,13 @@ class AnomaliDetail extends Component
     {
         $rows = $this->mikroQuery()->get()->map(function ($m) {
             $mitra = Mitra::where('email', $m->email_petugas)->first();
+            $statusLabel = $m->tindak_lanjut === 'sudah' 
+                ? 'Sudah (' . ($m->status_label ?? 'Tidak diketahui') . ')' 
+                : 'Belum';
             return [
                 $m->no, $m->nama, $m->nmkec, $m->nmdesa, $m->kode_sls, $m->sub_sls, $m->assignment_id,
                 $mitra->nama_ppl ?? '-', $mitra->nama_pml ?? '-', $mitra->pml_organik ?? '-',
-                $m->nama_anomali, $m->tindak_lanjut === 'sudah' ? 'Sudah' : 'Belum', $m->link_fasih,
+                $m->nama_anomali, $statusLabel, $m->link_fasih,
             ];
         });
 
@@ -148,11 +208,12 @@ class AnomaliDetail extends Component
         $viewData = [
             'kecamatanOptions' => $this->kecamatanOptions(),
             'desaOptions' => $this->desaOptions(),
+            'statusOptions' => AnomaliMikro::statusOptions(),
         ];
 
         if ($this->view === 'mikro') {
             $viewData['mikros'] = $this->mikroQuery()
-                ->with([]) // eager mitra lookup done manually below
+                ->with([])
                 ->orderBy('nmkec')->orderBy('nama')
                 ->paginate($this->perPage);
 

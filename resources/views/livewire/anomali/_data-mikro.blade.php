@@ -82,21 +82,24 @@
                     <span class="text-slate-400"> · {{ $mitra->nama_pml }}</span>
                 </div>
             @endif
-            <div class="flex items-center gap-2 mt-3 pt-2 border-t border-slate-100">
-                @if($m->link_fasih)
-                    <a href="{{ $m->link_fasih }}" target="_blank" 
-                       class="text-xs font-medium text-orange-600 hover:text-orange-700 transition">
-                        Buka Fasih
+            <div class="flex items-center gap-2 mt-3 pt-2 border-t border-slate-100 flex-wrap">
+                @if($m->fasih_link)
+                    <a href="{{ $m->fasih_link }}" target="_blank" 
+                       class="text-xs font-medium text-orange-600 hover:text-orange-700 transition hover:underline">
+                        🔗 {{ $m->fasih_link_short }}
                     </a>
                     <span class="text-slate-300">|</span>
                 @endif
                 @if($m->tindak_lanjut === 'sudah')
+                    <span class="text-[10px] px-2 py-0.5 rounded-full {{ $m->status_color }} font-medium">
+                        {{ $m->status_label }}
+                    </span>
                     <button wire:click="batalkanTindakLanjut({{ $m->id }})" 
                             class="text-xs font-medium text-amber-600 hover:text-amber-700 transition">
                         Batalkan
                     </button>
                 @else
-                    <button wire:click="tandaiSelesai({{ $m->id }})" 
+                    <button wire:click="bukaModalTindakLanjut({{ $m->id }})" 
                             class="text-xs font-medium text-emerald-600 hover:text-emerald-700 transition">
                         Tandai Selesai
                     </button>
@@ -125,7 +128,7 @@
                     <th class="px-3 py-3 text-left">SLS</th>
                     <th class="px-3 py-3 text-left">Assignment ID</th>
                     <th class="px-3 py-3 text-left">PPL / PML</th>
-                    <th class="px-3 py-3 text-left">Link Fasih</th>
+                    <th class="px-3 py-3 text-left">Fasih</th>
                     <th class="px-3 py-3 text-center">Status</th>
                     <th class="px-3 py-3 text-right">Aksi</th>
                 </tr>
@@ -152,27 +155,36 @@
                             @endif
                         </td>
                         <td class="px-3 py-3">
-                            @if($m->link_fasih)
-                                <a href="{{ $m->link_fasih }}" target="_blank" 
-                                   class="text-xs font-medium text-orange-600 hover:text-orange-700 transition">
-                                    Buka Fasih
+                            @if($m->fasih_link)
+                                <a href="{{ $m->fasih_link }}" target="_blank" 
+                                   class="text-xs font-medium text-orange-600 hover:text-orange-700 transition hover:underline">
+                                    {{ $m->fasih_link_short }}
                                 </a>
+                            @else
+                                <span class="text-xs text-slate-300">-</span>
                             @endif
                         </td>
                         <td class="px-3 py-3 text-center">
-                            <span class="px-2 py-1 rounded-full text-xs font-bold 
-                                {{ $m->tindak_lanjut === 'sudah' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200' }}">
-                                {{ $m->tindak_lanjut === 'sudah' ? 'Selesai' : 'Belum' }}
-                            </span>
+                            @if($m->tindak_lanjut === 'sudah')
+                                <span class="px-2 py-1 rounded-full text-xs font-bold {{ $m->status_color }}">
+                                    {{ $m->status_label }}
+                                </span>
+                            @else
+                                <span class="px-2 py-1 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-200">
+                                    Belum
+                                </span>
+                            @endif
                         </td>
                         <td class="px-3 py-3 text-right">
                             @if($m->tindak_lanjut === 'sudah')
-                                <button wire:click="batalkanTindakLanjut({{ $m->id }})" 
-                                        class="text-xs font-medium text-amber-600 hover:text-amber-700 transition">
-                                    Batalkan
-                                </button>
+                                <div class="flex flex-col items-end gap-1">
+                                    <button wire:click="batalkanTindakLanjut({{ $m->id }})" 
+                                            class="text-xs font-medium text-amber-600 hover:text-amber-700 transition">
+                                        Batalkan
+                                    </button>
+                                </div>
                             @else
-                                <button wire:click="tandaiSelesai({{ $m->id }})" 
+                                <button wire:click="bukaModalTindakLanjut({{ $m->id }})" 
                                         class="text-xs font-medium text-emerald-600 hover:text-emerald-700 transition">
                                     Tandai Selesai
                                 </button>
@@ -191,5 +203,110 @@
         {{ $mikros->links() }}
     </div>
 </div>
+
+<!-- ============================================ -->
+<!-- MODAL PILIH STATUS PENYELESAIAN -->
+<!-- ============================================ -->
+@if($showModal)
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-orange-50 to-amber-50">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold text-slate-800">Pilih Status Penyelesaian</h3>
+                <button wire:click="tutupModal" class="text-slate-400 hover:text-slate-600 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <p class="text-sm text-slate-500 mt-1">
+                Menandai anomali: <span class="font-semibold text-slate-700">{{ $modalAnomaliName }}</span>
+            </p>
+        </div>
+
+        <!-- Body -->
+        <div class="px-6 py-4">
+            <div class="space-y-3">
+                @foreach($statusOptions as $value => $label)
+                    @php
+                        $colors = [
+                            'revoked_pml' => 'border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700',
+                            'diselesaikan_admin' => 'border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700',
+                            'reject_admin' => 'border-red-200 bg-red-50 hover:bg-red-100 text-red-700',
+                        ];
+                        $badgeColors = [
+                            'revoked_pml' => 'bg-blue-100 text-blue-700',
+                            'diselesaikan_admin' => 'bg-emerald-100 text-emerald-700',
+                            'reject_admin' => 'bg-red-100 text-red-700',
+                        ];
+                        $descriptions = [
+                            'revoked_pml' => 'PML mencabut/membatalkan anomali',
+                            'diselesaikan_admin' => 'Admin telah menyelesaikan anomali',
+                            'reject_admin' => 'Admin menolak anomali',
+                        ];
+                    @endphp
+                    <label class="flex items-start gap-3 p-3 rounded-lg border-2 transition cursor-pointer 
+                        {{ $selectedStatus === $value ? $colors[$value] . ' border-current' : 'border-slate-200 hover:border-slate-300' }}">
+                        <input type="radio" 
+                               wire:model.live="selectedStatus" 
+                               value="{{ $value }}" 
+                               class="mt-1 w-4 h-4 accent-orange-600 cursor-pointer">
+                        <div class="flex-1">
+                            <span class="font-semibold text-sm block">{{ $label }}</span>
+                            <span class="text-xs text-slate-500">{{ $descriptions[$value] ?? '' }}</span>
+                        </div>
+                        <span class="text-xs px-2 py-0.5 rounded-full font-medium {{ $badgeColors[$value] }}">
+                            {{ $label }}
+                        </span>
+                    </label>
+                @endforeach
+            </div>
+
+            @if($errors->has('selectedStatus'))
+                <p class="mt-2 text-sm text-red-600">{{ $errors->first('selectedStatus') }}</p>
+            @endif
+        </div>
+
+        <!-- Footer -->
+        <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex gap-2 justify-end">
+            <button wire:click="tutupModal" 
+                    class="px-4 py-2 rounded-lg border border-slate-300 hover:bg-slate-100 text-slate-600 text-sm font-medium transition active:scale-95">
+                Batal
+            </button>
+            <button wire:click="prosesTandaiSelesai" 
+                    wire:loading.attr="disabled"
+                    class="px-5 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold transition active:scale-95 flex items-center gap-2 disabled:opacity-50">
+                <span wire:loading.remove>Konfirmasi</span>
+                <span wire:loading>
+                    <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                    </svg>
+                </span>
+            </button>
+        </div>
+    </div>
+</div>
+@endif
+
+<!-- ============================================ -->
+<!-- SESSION FLASH MESSAGES -->
+<!-- ============================================ -->
+@if(session()->has('success'))
+    <div class="fixed top-4 right-4 z-50 max-w-sm bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg shadow-lg animate-in slide-in-from-top-2 duration-300">
+        {{ session('success') }}
+    </div>
+@endif
+@if(session()->has('info'))
+    <div class="fixed top-4 right-4 z-50 max-w-sm bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg shadow-lg animate-in slide-in-from-top-2 duration-300">
+        {{ session('info') }}
+    </div>
+@endif
+@if(session()->has('error'))
+    <div class="fixed top-4 right-4 z-50 max-w-sm bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg shadow-lg animate-in slide-in-from-top-2 duration-300">
+        {{ session('error') }}
+    </div>
+@endif
 
 </div>
