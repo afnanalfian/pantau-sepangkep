@@ -26,7 +26,7 @@ class AnomaliDetail extends Component
     public string $search = '';
     public int $perPage = 10;
 
-    // Modal properties - PASTIKAN SEMUA ADA DENGAN NILAI DEFAULT
+    // Modal properties
     public bool $showModal = false;
     public ?int $selectedAnomaliId = null;
     public ?string $selectedStatus = null;
@@ -209,7 +209,7 @@ class AnomaliDetail extends Component
             'kecamatanOptions' => $this->kecamatanOptions(),
             'desaOptions' => $this->desaOptions(),
             'statusOptions' => AnomaliMikro::statusOptions(),
-            // PASTIKAN SEMUA VARIABEL MODAL DITERUSKAN KE VIEW
+            // Kirim semua properti modal ke view
             'showModal' => $this->showModal,
             'selectedStatus' => $this->selectedStatus,
             'modalAnomaliName' => $this->modalAnomaliName,
