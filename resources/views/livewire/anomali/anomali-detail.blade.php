@@ -25,7 +25,7 @@
 
     <!-- Content -->
     @if($view === 'dashboard')
-        @include('livewire.anomali._dashboard-anomali', ['dash' => $dash])
+        @include('livewire.anomali._dashboard', ['dash' => $dash])
     @else
         {{-- Kirim variable modal secara eksplisit supaya tidak pernah "Undefined variable"
              walaupun ada masalah cache/scope pada @include --}}
