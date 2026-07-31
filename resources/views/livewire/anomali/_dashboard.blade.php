@@ -1,130 +1,148 @@
-<div>
-    <!-- Statistik Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-            <div class="flex items-center justify-between">
-                <span class="text-sm font-medium text-slate-500">Total Anomali</span>
-                <span class="text-2xl font-bold text-slate-800">{{ $dash['total'] }}</span>
+<div wire:key="anomali-dash">
+
+<!-- ============================================ -->
+<!-- STATS CARDS -->
+<!-- ============================================ -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-5 sm:mb-6">
+    <div class="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm">
+        <p class="text-[10px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wide">Total Kasus Anomali</p>
+        <p class="font-display font-bold text-2xl sm:text-3xl text-slate-900 mt-1 sm:mt-2">{{ number_format($d['total']) }}</p>
+    </div>
+    <div class="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm">
+        <p class="text-[10px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wide">Sudah Tindak Lanjut</p>
+        <p class="font-display font-bold text-2xl sm:text-3xl text-emerald-600 mt-1 sm:mt-2">{{ number_format($d['selesai']) }}</p>
+    </div>
+    <div class="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm">
+        <p class="text-[10px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wide">Persentase Penyelesaian</p>
+        <p class="font-display font-bold text-2xl sm:text-3xl text-orange-600 mt-1 sm:mt-2">{{ $d['total'] > 0 ? round($d['selesai'] / $d['total'] * 100, 1) : 0 }}%</p>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- CHARTS - Grid -->
+<!-- ============================================ -->
+<div class="grid lg:grid-cols-2 gap-4 sm:gap-5 mb-5">
+    <div class="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-slate-200 shadow-sm">
+        <h3 class="font-display font-semibold text-slate-800 text-sm sm:text-base mb-3 sm:mb-4">Kasus berdasarkan Jenis</h3>
+        <canvas id="chartJenis" height="140"></canvas>
+    </div>
+    <div class="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-slate-200 shadow-sm">
+        <h3 class="font-display font-semibold text-slate-800 text-sm sm:text-base mb-3 sm:mb-4">Status Tindak Lanjut</h3>
+        <canvas id="chartStatus" height="140"></canvas>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- TOP ANOMALI CHART -->
+<!-- ============================================ -->
+<div class="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-slate-200 shadow-sm mb-5">
+    <h3 class="font-display font-semibold text-slate-800 text-sm sm:text-base mb-3 sm:mb-4">Kasus berdasarkan Jenis Anomali (Top 10)</h3>
+    <canvas id="chartAnomali" height="90"></canvas>
+</div>
+
+<!-- ============================================ -->
+<!-- KECAMATAN TABLE -->
+<!-- ============================================ -->
+<div class="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-slate-200 shadow-sm">
+    <h3 class="font-display font-semibold text-slate-800 text-sm sm:text-base mb-3 sm:mb-4">Monitoring Penyelesaian per Kecamatan</h3>
+    
+    <!-- Mobile: Card View -->
+    <div class="sm:hidden space-y-3">
+        @forelse($d['byKecamatan'] as $r)
+            <div class="bg-slate-50 rounded-lg p-3">
+                <div class="flex items-center justify-between">
+                    <span class="font-semibold text-slate-700 text-sm">{{ $r['kecamatan'] }}</span>
+                    <span class="text-xs font-bold px-2 py-0.5 rounded-full
+                        {{ $r['persen'] >= 80 ? 'bg-emerald-50 text-emerald-700' : ($r['persen'] >= 40 ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-700') }}">
+                        {{ $r['persen'] }}%
+                    </span>
+                </div>
+                <div class="flex items-center gap-4 mt-1 text-xs text-slate-500">
+                    <span>Total: {{ $r['total'] }}</span>
+                    <span>Selesai: {{ $r['selesai'] }}</span>
+                </div>
             </div>
-        </div>
-        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-            <div class="flex items-center justify-between">
-                <span class="text-sm font-medium text-slate-500">Selesai Ditindaklanjuti</span>
-                <span class="text-2xl font-bold text-emerald-600">{{ $dash['selesai'] }}</span>
-            </div>
-        </div>
-        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-            <div class="flex items-center justify-between">
-                <span class="text-sm font-medium text-slate-500">Belum Ditindaklanjuti</span>
-                <span class="text-2xl font-bold text-red-600">{{ $dash['total'] - $dash['selesai'] }}</span>
-            </div>
-        </div>
-        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-            <div class="flex items-center justify-between">
-                <span class="text-sm font-medium text-slate-500">Progress</span>
-                <span class="text-2xl font-bold text-orange-600">
-                    {{ $dash['total'] > 0 ? round(($dash['selesai'] / $dash['total']) * 100, 1) : 0 }}%
-                </span>
-            </div>
-        </div>
+        @empty
+            <p class="text-center text-slate-400 text-sm py-4">Belum ada data.</p>
+        @endforelse
     </div>
 
-    <!-- Charts Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- By Jenis -->
-        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-            <h3 class="font-semibold text-slate-700 mb-3">By Jenis</h3>
-            @if(count($dash['byJenis']) > 0)
-                <div class="space-y-2">
-                    @foreach($dash['byJenis'] as $jenis => $count)
-                        <div class="flex items-center gap-2">
-                            <span class="text-sm text-slate-600 w-20">{{ ucfirst($jenis) }}</span>
-                            <div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                                <div class="h-full bg-orange-500 rounded-full" style="width: {{ ($count / $dash['total']) * 100 }}%"></div>
-                            </div>
-                            <span class="text-sm font-semibold text-slate-700">{{ $count }}</span>
-                        </div>
-                    @endforeach
-                </div>
-            @else
-                <p class="text-sm text-slate-400">Tidak ada data</p>
-            @endif
-        </div>
-
-        <!-- By Status -->
-        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-            <h3 class="font-semibold text-slate-700 mb-3">By Status</h3>
-            @if(count($dash['byStatus']) > 0)
-                <div class="space-y-2">
-                    @foreach($dash['byStatus'] as $status => $count)
-                        <div class="flex items-center gap-2">
-                            <span class="text-sm text-slate-600 w-20">{{ ucfirst($status) }}</span>
-                            <div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                                <div class="h-full rounded-full {{ $status === 'sudah' ? 'bg-emerald-500' : 'bg-red-500' }}" 
-                                     style="width: {{ ($count / $dash['total']) * 100 }}%"></div>
-                            </div>
-                            <span class="text-sm font-semibold text-slate-700">{{ $count }}</span>
-                        </div>
-                    @endforeach
-                </div>
-            @else
-                <p class="text-sm text-slate-400">Tidak ada data</p>
-            @endif
-        </div>
-
-        <!-- Top 10 Anomali -->
-        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-            <h3 class="font-semibold text-slate-700 mb-3">Top 10 Nama Anomali</h3>
-            @if(count($dash['byAnomali']) > 0)
-                <div class="space-y-2 max-h-64 overflow-y-auto">
-                    @foreach($dash['byAnomali'] as $nama => $count)
-                        <div class="flex items-center justify-between py-1 border-b border-slate-50">
-                            <span class="text-sm text-slate-600 truncate flex-1">{{ $nama }}</span>
-                            <span class="text-sm font-semibold text-slate-700 ml-2">{{ $count }}</span>
-                        </div>
-                    @endforeach
-                </div>
-            @else
-                <p class="text-sm text-slate-400">Tidak ada data</p>
-            @endif
-        </div>
-
-        <!-- By Kecamatan -->
-        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-            <h3 class="font-semibold text-slate-700 mb-3">By Kecamatan</h3>
-            @if(count($dash['byKecamatan']) > 0)
-                <div class="space-y-2 max-h-64 overflow-y-auto">
-                    @foreach($dash['byKecamatan'] as $kec)
-                        <div class="flex items-center justify-between py-1 border-b border-slate-50">
-                            <span class="text-sm text-slate-600 flex-1">{{ $kec['kecamatan'] }}</span>
-                            <span class="text-xs text-slate-500">
-                                {{ $kec['selesai'] }}/{{ $kec['total'] }} 
-                                ({{ $kec['persen'] }}%)
+    <!-- Desktop: Table View -->
+    <div class="hidden sm:block overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-slate-50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-200">
+                <tr>
+                    <th class="px-4 py-3 text-left">Kecamatan</th>
+                    <th class="px-4 py-3 text-center">Total Kasus</th>
+                    <th class="px-4 py-3 text-center">Selesai</th>
+                    <th class="px-4 py-3 text-center">Persentase</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                @forelse($d['byKecamatan'] as $r)
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="px-4 py-3 font-semibold text-slate-700">{{ $r['kecamatan'] }}</td>
+                        <td class="px-4 py-3 text-center text-slate-600">{{ $r['total'] }}</td>
+                        <td class="px-4 py-3 text-center text-slate-600">{{ $r['selesai'] }}</td>
+                        <td class="px-4 py-3 text-center">
+                            <span class="px-2 py-1 rounded-full text-xs font-bold
+                                {{ $r['persen'] >= 80 ? 'bg-emerald-50 text-emerald-700' : ($r['persen'] >= 40 ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-700') }}">
+                                {{ $r['persen'] }}%
                             </span>
-                            <div class="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden ml-2">
-                                <div class="h-full bg-orange-500 rounded-full" style="width: {{ $kec['persen'] }}%"></div>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            @else
-                <p class="text-sm text-slate-400">Tidak ada data</p>
-            @endif
-        </div>
+                        </td>
+                    </tr>
+                @empty
+                    <tr><td colspan="4" class="px-4 py-10 text-center text-slate-400">Belum ada data.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
+</div>
 
-    <!-- Status Penyelesaian -->
-    @if(count($dash['byStatusPenyelesaian']) > 0)
-        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm mt-6">
-            <h3 class="font-semibold text-slate-700 mb-3">Status Penyelesaian</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                @foreach($dash['byStatusPenyelesaian'] as $status => $data)
-                    <div class="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-200">
-                        <span class="text-sm font-medium text-slate-600">{{ $data['label'] }}</span>
-                        <span class="text-lg font-bold text-slate-800">{{ $data['count'] }}</span>
-                    </div>
-                @endforeach
-            </div>
-        </div>
-    @endif
+<!-- ============================================ -->
+<!-- CHARTS SCRIPT -->
+<!-- ============================================ -->
+<script>
+(function() {
+    const jenis = @json($d['byJenis']);
+    const status = @json($d['byStatus']);
+    const anomali = @json($d['byAnomali']);
+
+    if (window._chartJenis) window._chartJenis.destroy();
+    window._chartJenis = new Chart(document.getElementById('chartJenis'), {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(jenis).map(k => k === 'usaha' ? 'Usaha' : 'Keluarga'),
+            datasets: [{ data: Object.values(jenis), backgroundColor: ['#F59E0B', '#1E293B'] }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 15 } } } }
+    });
+
+    if (window._chartStatus) window._chartStatus.destroy();
+    window._chartStatus = new Chart(document.getElementById('chartStatus'), {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(status).map(k => k === 'sudah' ? 'Sudah Tindak Lanjut' : 'Belum Tindak Lanjut'),
+            datasets: [{ data: Object.values(status), backgroundColor: ['#10B981', '#EF4444'] }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 15 } } } }
+    });
+
+    if (window._chartAnomali) window._chartAnomali.destroy();
+    window._chartAnomali = new Chart(document.getElementById('chartAnomali'), {
+        type: 'bar',
+        data: {
+            labels: Object.keys(anomali),
+            datasets: [{ label: 'Jumlah Kasus', data: Object.values(anomali), backgroundColor: '#F59E0B', borderRadius: 4 }]
+        },
+        options: { 
+            responsive: true, 
+            indexAxis: 'y', 
+            plugins: { legend: { display: false } },
+            scales: { x: { grid: { display: false } }, y: { grid: { display: false } } }
+        }
+    });
+})();
+</script>
+
 </div>
