@@ -207,7 +207,7 @@
 <!-- ============================================ -->
 <!-- MODAL PILIH STATUS PENYELESAIAN -->
 <!-- ============================================ -->
-@if(isset($showModal) && $showModal)
+@if($showModal ?? false)
 <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
     <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
         <!-- Header -->
