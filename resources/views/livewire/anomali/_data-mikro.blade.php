@@ -207,7 +207,13 @@
 <!-- ============================================ -->
 <!-- MODAL PILIH STATUS PENYELESAIAN -->
 <!-- ============================================ -->
-@if($this->showModal)
+@php
+    $showModal = $showModal ?? false;
+    $modalAnomaliName = $modalAnomaliName ?? '';
+    $selectedStatus = $selectedStatus ?? null;
+@endphp
+
+@if($showModal)
 <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
     <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
         <!-- Header -->
@@ -221,7 +227,7 @@
                 </button>
             </div>
             <p class="text-sm text-slate-500 mt-1">
-                Menandai anomali: <span class="font-semibold text-slate-700">{{ $this->modalAnomaliName }}</span>
+                Menandai anomali: <span class="font-semibold text-slate-700">{{ $modalAnomaliName }}</span>
             </p>
         </div>
 
@@ -245,9 +251,10 @@
                             'diselesaikan_admin' => 'Admin telah menyelesaikan anomali',
                             'reject_admin' => 'Admin menolak anomali',
                         ];
+                        $isChecked = $selectedStatus === $value;
                     @endphp
                     <label class="flex items-start gap-3 p-3 rounded-lg border-2 transition cursor-pointer 
-                        {{ $this->selectedStatus === $value ? $colors[$value] . ' border-current' : 'border-slate-200 hover:border-slate-300' }}">
+                        {{ $isChecked ? $colors[$value] . ' border-current' : 'border-slate-200 hover:border-slate-300' }}">
                         <input type="radio" 
                                wire:model.live="selectedStatus" 
                                value="{{ $value }}" 
