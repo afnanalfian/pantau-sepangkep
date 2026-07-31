@@ -1,3 +1,14 @@
+@php
+    // Guard defensif: pastikan semua variable yang dipakai partial ini
+    // selalu terdefinisi, apapun cara ia dipanggil (include biasa,
+    // Livewire re-render, atau view cache lama).
+    $showModal = $showModal ?? false;
+    $selectedStatus = $selectedStatus ?? null;
+    $modalAnomaliName = $modalAnomaliName ?? null;
+    $statusOptions = $statusOptions ?? [];
+    $kecamatanOptions = $kecamatanOptions ?? collect();
+    $desaOptions = $desaOptions ?? collect();
+@endphp
 <div wire:key="anomali-mikro">
 
 <!-- ============================================ -->
@@ -207,7 +218,7 @@
 <!-- ============================================ -->
 <!-- MODAL PILIH STATUS PENYELESAIAN -->
 <!-- ============================================ -->
-@if($showModal ?? false)
+@if($showModal)
 <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
     <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
         <!-- Header -->

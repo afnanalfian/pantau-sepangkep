@@ -25,17 +25,19 @@
 
     <!-- Content -->
     @if($view === 'dashboard')
-        @include('livewire.anomali._dashboard', ['dash' => $dash])
+        @include('livewire.anomali._dashboard-anomali', ['dash' => $dash])
     @else
+        {{-- Kirim variable modal secara eksplisit supaya tidak pernah "Undefined variable"
+             walaupun ada masalah cache/scope pada @include --}}
         @include('livewire.anomali._data-mikro', [
-            'mikros' => $mikros ?? collect(),
-            'mitraMap' => $mitraMap ?? collect(),
+            'mikros' => $mikros,
+            'mitraMap' => $mitraMap,
             'kecamatanOptions' => $kecamatanOptions,
             'desaOptions' => $desaOptions,
-            'statusOptions' => $statusOptions,
-            'showModal' => $showModal,
-            'selectedStatus' => $selectedStatus,
-            'modalAnomaliName' => $modalAnomaliName,
+            'statusOptions' => $statusOptions ?? [],
+            'showModal' => $showModal ?? false,
+            'selectedStatus' => $selectedStatus ?? null,
+            'modalAnomaliName' => $modalAnomaliName ?? null,
         ])
     @endif
 </div>
