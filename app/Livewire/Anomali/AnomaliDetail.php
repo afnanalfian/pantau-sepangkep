@@ -92,8 +92,11 @@ class AnomaliDetail extends Component
             'status_penyelesaian' => $this->selectedStatus,
         ]);
 
+        // Ambil label status dengan aman
+        $statusLabel = AnomaliMikro::statusOptions()[$this->selectedStatus] ?? $this->selectedStatus;
+        
         $this->tutupModal();
-        session()->flash('success', 'Anomali berhasil ditandai selesai dengan status: ' . AnomaliMikro::statusOptions()[$this->selectedStatus]);
+        session()->flash('success', 'Anomali berhasil ditandai selesai dengan status: ' . $statusLabel);
     }
 
     public function batalkanTindakLanjut(int $id)
