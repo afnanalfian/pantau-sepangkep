@@ -25,8 +25,17 @@
 
     <!-- Content -->
     @if($view === 'dashboard')
-        @include('livewire.anomali._dashboard-anomali', ['dash' => $dash])
+        @include('livewire.anomali._dashboard', ['dash' => $dash])
     @else
-        @include('livewire.anomali._data-mikro')
+        @include('livewire.anomali._data-mikro', [
+            'mikros' => $mikros ?? collect(),
+            'mitraMap' => $mitraMap ?? collect(),
+            'kecamatanOptions' => $kecamatanOptions,
+            'desaOptions' => $desaOptions,
+            'statusOptions' => $statusOptions,
+            'showModal' => $showModal,
+            'selectedStatus' => $selectedStatus,
+            'modalAnomaliName' => $modalAnomaliName,
+        ])
     @endif
 </div>
