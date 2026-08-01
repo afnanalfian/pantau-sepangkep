@@ -11,11 +11,11 @@
                 </p>
             </div>
             <div class="flex gap-2">
-                <button wire:click="kembaliKeDashboard" 
+                <button wire:click="kembaliKeDashboard"
                         class="px-4 py-2 rounded-lg {{ $view === 'dashboard' ? 'bg-orange-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }} text-sm font-semibold transition">
                     Dashboard
                 </button>
-                <button wire:click="lihatDataMikro" 
+                <button wire:click="lihatDataMikro"
                         class="px-4 py-2 rounded-lg {{ $view === 'mikro' ? 'bg-orange-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }} text-sm font-semibold transition">
                     Data Mikro
                 </button>
@@ -27,11 +27,11 @@
     @if($view === 'dashboard')
         @include('livewire.anomali._dashboard', ['dash' => $dash])
     @else
-        {{-- Kirim variable modal secara eksplisit supaya tidak pernah "Undefined variable"
+        {{-- Kirim variable secara eksplisit supaya tidak pernah "Undefined variable"
              walaupun ada masalah cache/scope pada @include --}}
-        @include('livewire.anomali._data-mikro', [  
+        @include('livewire.anomali._data-mikro', [
             'mikros' => $mikros,
-            'mitraMap' => $mitraMap,
+            'petugasMap' => $petugasMap ?? [],
             'kecamatanOptions' => $kecamatanOptions,
             'desaOptions' => $desaOptions,
             'statusOptions' => $statusOptions ?? [],

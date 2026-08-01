@@ -8,6 +8,7 @@
     $statusOptions = $statusOptions ?? [];
     $kecamatanOptions = $kecamatanOptions ?? collect();
     $desaOptions = $desaOptions ?? collect();
+    $petugasMap = $petugasMap ?? [];
 @endphp
 <div wire:key="anomali-mikro">
 
@@ -19,42 +20,42 @@
         <!-- Row 1: Search & Export -->
         <div class="flex flex-col sm:flex-row gap-2">
             <div class="relative flex-1">
-                <input type="text" 
-                       wire:model.live.debounce.400ms="search" 
-                       placeholder="Cari nama/assignment/SLS..." 
+                <input type="text"
+                       wire:model.live.debounce.400ms="search"
+                       placeholder="Cari nama / assignment / SLS / nama PPL-PML..."
                        class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition text-sm">
             </div>
-            <button wire:click="exportMikro" 
+            <button wire:click="exportMikro"
                     class="w-full sm:w-auto px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition active:scale-95">
                 Export Excel
             </button>
         </div>
-        
+
         <!-- Row 2: Filters -->
         <div class="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
-            <select wire:model.live="filterJenis" 
+            <select wire:model.live="filterJenis"
                     class="px-3 py-2 rounded-lg border border-slate-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition text-sm">
                 <option value="">Jenis</option>
                 <option value="usaha">Usaha</option>
                 <option value="keluarga">Keluarga</option>
             </select>
-            <select wire:model.live="filterKecamatan" 
+            <select wire:model.live="filterKecamatan"
                     class="px-3 py-2 rounded-lg border border-slate-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition text-sm">
                 <option value="">Semua Kecamatan</option>
                 @foreach($kecamatanOptions as $k)<option value="{{ $k }}">{{ $k }}</option>@endforeach
             </select>
-            <select wire:model.live="filterDesa" 
+            <select wire:model.live="filterDesa"
                     class="px-3 py-2 rounded-lg border border-slate-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition text-sm">
                 <option value="">Semua Desa/Kel</option>
                 @foreach($desaOptions as $k)<option value="{{ $k }}">{{ $k }}</option>@endforeach
             </select>
-            <select wire:model.live="filterStatus" 
+            <select wire:model.live="filterStatus"
                     class="px-3 py-2 rounded-lg border border-slate-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition text-sm">
                 <option value="">Semua Status</option>
                 <option value="belum">Belum Tindak Lanjut</option>
                 <option value="sudah">Sudah Tindak Lanjut</option>
             </select>
-            <select wire:model.live="perPage" 
+            <select wire:model.live="perPage"
                     class="px-3 py-2 rounded-lg border border-slate-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition text-sm">
                 <option value="10">10 / hal</option>
                 <option value="20">20 / hal</option>
@@ -70,11 +71,13 @@
 <!-- ============================================ -->
 <div class="sm:hidden space-y-3">
     @forelse($mikros as $m)
-        @php $mitra = $mitraMap->get($m->email_petugas); @endphp
+        @php $p = $petugasMap[$m->id] ?? null; @endphp
         <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
             <div class="flex items-start justify-between">
                 <div class="flex-1 min-w-0">
-                    <div class="font-semibold text-slate-800 text-sm">{{ $m->nama }}</div>
+                    <div class="font-semibold text-slate-800 text-sm {{ $m->nama ? '' : 'italic text-slate-400' }}">
+                        {{ $m->nama_display }}
+                    </div>
                     <div class="text-[10px] text-slate-400">{{ $m->nama_anomali }}</div>
                 </div>
                 <span class="text-[10px] font-bold px-2 py-0.5 rounded-full {{ $m->tindak_lanjut === 'sudah' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200' }}">
@@ -84,18 +87,21 @@
             <div class="grid grid-cols-2 gap-1 mt-2 text-xs text-slate-500">
                 <span>{{ $m->nmkec }}</span>
                 <span>{{ $m->nmdesa }}</span>
-                <span class="font-mono">{{ $m->kode_sls }}/{{ $m->sub_sls }}</span>
-                <span class="font-mono text-[10px]">{{ $m->assignment_id }}</span>
+                <span class="font-mono">{{ $m->sls_label }}</span>
+                <span class="font-mono text-[10px]">{{ $m->region_key ?? '-' }}</span>
             </div>
-            @if($mitra)
-                <div class="mt-2 text-xs text-slate-600 border-t border-slate-100 pt-2">
-                    <span class="font-medium">{{ $mitra->nama_ppl }}</span>
-                    <span class="text-slate-400"> · {{ $mitra->nama_pml }}</span>
-                </div>
-            @endif
+            <div class="mt-2 text-xs border-t border-slate-100 pt-2">
+                @if($p)
+                    <div class="text-slate-700"><span class="text-slate-400">PPL:</span> <span class="font-medium">{{ $p['nama_ppl'] ?: '-' }}</span></div>
+                    <div class="text-slate-600"><span class="text-slate-400">PML:</span> {{ $p['nama_pml'] ?: '-' }}</div>
+                    <div class="text-slate-600"><span class="text-slate-400">Organik:</span> {{ $p['pml_organik'] ?: '-' }}</div>
+                @else
+                    <span class="text-slate-300">Petugas tidak ditemukan untuk wilayah ini</span>
+                @endif
+            </div>
             <div class="flex items-center gap-2 mt-3 pt-2 border-t border-slate-100 flex-wrap">
                 @if($m->fasih_link)
-                    <a href="{{ $m->fasih_link }}" target="_blank" 
+                    <a href="{{ $m->fasih_link }}" target="_blank"
                        class="text-xs font-medium text-orange-600 hover:text-orange-700 transition hover:underline">
                         🔗 {{ $m->fasih_link_short }}
                     </a>
@@ -105,12 +111,12 @@
                     <span class="text-[10px] px-2 py-0.5 rounded-full {{ $m->status_color }} font-medium">
                         {{ $m->status_label }}
                     </span>
-                    <button wire:click="batalkanTindakLanjut({{ $m->id }})" 
+                    <button wire:click="batalkanTindakLanjut({{ $m->id }})"
                             class="text-xs font-medium text-amber-600 hover:text-amber-700 transition">
                         Batalkan
                     </button>
                 @else
-                    <button wire:click="bukaModalTindakLanjut({{ $m->id }})" 
+                    <button wire:click="bukaModalTindakLanjut({{ $m->id }})"
                             class="text-xs font-medium text-emerald-600 hover:text-emerald-700 transition">
                         Tandai Selesai
                     </button>
@@ -122,6 +128,8 @@
             <p class="text-sm text-slate-400">Tidak ada data yang cocok dengan filter.</p>
         </div>
     @endforelse
+
+    <div class="pt-2">{{ $mikros->links() }}</div>
 </div>
 
 <!-- ============================================ -->
@@ -137,7 +145,6 @@
                     <th class="px-3 py-3 text-left">Kecamatan</th>
                     <th class="px-3 py-3 text-left">Desa/Kel</th>
                     <th class="px-3 py-3 text-left">SLS</th>
-                    <th class="px-3 py-3 text-left">Assignment ID</th>
                     <th class="px-3 py-3 text-left">PPL / PML</th>
                     <th class="px-3 py-3 text-left">Fasih</th>
                     <th class="px-3 py-3 text-center">Status</th>
@@ -146,28 +153,32 @@
             </thead>
             <tbody class="divide-y divide-slate-100">
                 @forelse($mikros as $m)
-                    @php $mitra = $mitraMap->get($m->email_petugas); @endphp
+                    @php $p = $petugasMap[$m->id] ?? null; @endphp
                     <tr class="hover:bg-slate-50 transition">
                         <td class="px-3 py-3 text-slate-500 text-center">{{ $m->no }}</td>
                         <td class="px-3 py-3">
-                            <div class="font-semibold text-slate-700">{{ $m->nama }}</div>
+                            <div class="font-semibold text-slate-700 {{ $m->nama ? '' : 'italic font-normal text-slate-400' }}">
+                                {{ $m->nama_display }}
+                            </div>
                             <div class="text-[10px] text-slate-400">{{ $m->nama_anomali }}</div>
                         </td>
                         <td class="px-3 py-3 text-slate-600">{{ $m->nmkec }}</td>
                         <td class="px-3 py-3 text-slate-600">{{ $m->nmdesa }}</td>
-                        <td class="px-3 py-3 text-slate-500 font-mono text-xs">{{ $m->kode_sls }}/{{ $m->sub_sls }}</td>
-                        <td class="px-3 py-3 text-slate-400 font-mono text-[10px]">{{ $m->assignment_id }}</td>
+                        <td class="px-3 py-3 text-slate-500 font-mono text-xs">
+                            {{ $m->sls_label }}
+                            <div class="text-[10px] text-slate-300">{{ $m->region_key ?? '-' }}</div>
+                        </td>
                         <td class="px-3 py-3 text-xs">
-                            @if($mitra)
-                                <div class="text-slate-700 font-medium">{{ $mitra->nama_ppl }}</div>
-                                <div class="text-slate-400">{{ $mitra->nama_pml }} · {{ $mitra->pml_organik }}</div>
+                            @if($p)
+                                <div class="text-slate-700 font-medium">{{ $p['nama_ppl'] ?: '-' }}</div>
+                                <div class="text-slate-400">{{ $p['nama_pml'] ?: '-' }} · {{ $p['pml_organik'] ?: '-' }}</div>
                             @else
-                                <span class="text-slate-300">Tidak ada</span>
+                                <span class="text-slate-300">Tidak ditemukan</span>
                             @endif
                         </td>
                         <td class="px-3 py-3">
                             @if($m->fasih_link)
-                                <a href="{{ $m->fasih_link }}" target="_blank" 
+                                <a href="{{ $m->fasih_link }}" target="_blank"
                                    class="text-xs font-medium text-orange-600 hover:text-orange-700 transition hover:underline">
                                     {{ $m->fasih_link_short }}
                                 </a>
@@ -188,14 +199,12 @@
                         </td>
                         <td class="px-3 py-3 text-right">
                             @if($m->tindak_lanjut === 'sudah')
-                                <div class="flex flex-col items-end gap-1">
-                                    <button wire:click="batalkanTindakLanjut({{ $m->id }})" 
-                                            class="text-xs font-medium text-amber-600 hover:text-amber-700 transition">
-                                        Batalkan
-                                    </button>
-                                </div>
+                                <button wire:click="batalkanTindakLanjut({{ $m->id }})"
+                                        class="text-xs font-medium text-amber-600 hover:text-amber-700 transition">
+                                    Batalkan
+                                </button>
                             @else
-                                <button wire:click="bukaModalTindakLanjut({{ $m->id }})" 
+                                <button wire:click="bukaModalTindakLanjut({{ $m->id }})"
                                         class="text-xs font-medium text-emerald-600 hover:text-emerald-700 transition">
                                     Tandai Selesai
                                 </button>
@@ -204,7 +213,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="10" class="px-4 py-10 text-center text-slate-400">Tidak ada data yang cocok dengan filter.</td>
+                        <td colspan="9" class="px-4 py-10 text-center text-slate-400">Tidak ada data yang cocok dengan filter.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -219,8 +228,8 @@
 <!-- MODAL PILIH STATUS PENYELESAIAN -->
 <!-- ============================================ -->
 @if($showModal)
-<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
         <!-- Header -->
         <div class="px-6 py-4 border-b border-slate-200 bg-gradient-to-r from-orange-50 to-amber-50">
             <div class="flex items-center justify-between">
@@ -257,11 +266,11 @@
                             'reject_admin' => 'Admin menolak anomali',
                         ];
                     @endphp
-                    <label class="flex items-start gap-3 p-3 rounded-lg border-2 transition cursor-pointer 
+                    <label class="flex items-start gap-3 p-3 rounded-lg border-2 transition cursor-pointer
                         {{ $selectedStatus === $value ? $colors[$value] . ' border-current' : 'border-slate-200 hover:border-slate-300' }}">
-                        <input type="radio" 
-                               wire:model.live="selectedStatus" 
-                               value="{{ $value }}" 
+                        <input type="radio"
+                               wire:model.live="selectedStatus"
+                               value="{{ $value }}"
                                class="mt-1 w-4 h-4 accent-orange-600 cursor-pointer">
                         <div class="flex-1">
                             <span class="font-semibold text-sm block">{{ $label }}</span>
@@ -281,11 +290,11 @@
 
         <!-- Footer -->
         <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex gap-2 justify-end">
-            <button wire:click="tutupModal" 
+            <button wire:click="tutupModal"
                     class="px-4 py-2 rounded-lg border border-slate-300 hover:bg-slate-100 text-slate-600 text-sm font-medium transition active:scale-95">
                 Batal
             </button>
-            <button wire:click="prosesTandaiSelesai" 
+            <button wire:click="prosesTandaiSelesai"
                     wire:loading.attr="disabled"
                     class="px-5 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold transition active:scale-95 flex items-center gap-2 disabled:opacity-50">
                 <span wire:loading.remove>Konfirmasi</span>
@@ -305,17 +314,17 @@
 <!-- SESSION FLASH MESSAGES -->
 <!-- ============================================ -->
 @if(session()->has('success'))
-    <div class="fixed top-4 right-4 z-50 max-w-sm bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg shadow-lg animate-in slide-in-from-top-2 duration-300">
+    <div class="fixed top-4 right-4 z-50 max-w-sm bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg shadow-lg">
         {{ session('success') }}
     </div>
 @endif
 @if(session()->has('info'))
-    <div class="fixed top-4 right-4 z-50 max-w-sm bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg shadow-lg animate-in slide-in-from-top-2 duration-300">
+    <div class="fixed top-4 right-4 z-50 max-w-sm bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg shadow-lg">
         {{ session('info') }}
     </div>
 @endif
 @if(session()->has('error'))
-    <div class="fixed top-4 right-4 z-50 max-w-sm bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg shadow-lg animate-in slide-in-from-top-2 duration-300">
+    <div class="fixed top-4 right-4 z-50 max-w-sm bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg shadow-lg">
         {{ session('error') }}
     </div>
 @endif

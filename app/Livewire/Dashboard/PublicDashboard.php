@@ -5,6 +5,7 @@ namespace App\Livewire\Dashboard;
 use App\Models\DailyUpload;
 use App\Models\SlsDaily;
 use App\Services\SimpleExcelExporter;
+use Illuminate\Support\Collection;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -16,20 +17,45 @@ class PublicDashboard extends Component
 
     public string $tab = 'utama';
 
-    // filters shared across tabs
+    // filter yang berlaku untuk SEMUA tab
     public string $filterKecamatan = '';
+    public string $filterDesa = '';
     public string $search = '';
     public int $perPage = 10;
     public string $sortField = 'progress';
     public string $sortDir = 'desc';
 
-    // produktivitas modal
+    // produktivitas
     public ?string $modalPpl = null;
 
-    protected $queryString = ['tab'];
+    protected $queryString = [
+        'tab',
+        'filterKecamatan' => ['except' => ''],
+        'filterDesa' => ['except' => ''],
+    ];
+
+    /** cache per-request supaya tidak query berulang kali dalam satu render */
+    protected ?Collection $rowsCache = null;
 
     public function updatingSearch() { $this->resetPage(); }
     public function updatingFilterKecamatan() { $this->resetPage(); }
+    public function updatingFilterDesa() { $this->resetPage(); }
+    public function updatingPerPage() { $this->resetPage(); }
+
+    public function updatedFilterKecamatan()
+    {
+        // desa yang sebelumnya dipilih belum tentu ada di kecamatan baru
+        $this->filterDesa = '';
+        $this->rowsCache = null;
+    }
+
+    public function resetFilter()
+    {
+        $this->filterKecamatan = '';
+        $this->filterDesa = '';
+        $this->search = '';
+        $this->resetPage();
+    }
 
     public function setTab(string $tab)
     {
@@ -47,37 +73,91 @@ class PublicDashboard extends Component
         }
     }
 
+    // =================================================================
+    // SUMBER DATA
+    // =================================================================
+
     protected function latestUpload(): ?DailyUpload
     {
         return DailyUpload::orderByDesc('tanggal')->first();
     }
 
-    protected function latestRows()
+    /** Semua baris SLS pada upload terbaru (tanpa filter). */
+    protected function latestRows(): Collection
     {
+        if ($this->rowsCache !== null) {
+            return $this->rowsCache;
+        }
+
         $latest = $this->latestUpload();
-        if (!$latest) return collect();
-        return SlsDaily::where('daily_upload_id', $latest->id)->get();
+
+        return $this->rowsCache = $latest
+            ? SlsDaily::where('daily_upload_id', $latest->id)->get()
+            : collect();
     }
 
-    protected function kecamatanList()
+    /**
+     * Terapkan filter wilayah (kecamatan + desa/kelurahan).
+     * Dipakai oleh SEMUA tab supaya filter konsisten.
+     */
+    protected function applyWilayah(Collection $rows): Collection
+    {
+        if ($this->filterKecamatan !== '') {
+            $rows = $rows->where('nmkec', $this->filterKecamatan);
+        }
+        if ($this->filterDesa !== '') {
+            $rows = $rows->where('nmdes', $this->filterDesa);
+        }
+
+        return $rows->values();
+    }
+
+    /** Baris upload terbaru yang sudah difilter wilayah. */
+    protected function rows(): Collection
+    {
+        return $this->applyWilayah($this->latestRows());
+    }
+
+    protected function kecamatanList(): Collection
     {
         return $this->latestRows()->pluck('nmkec')->filter()->unique()->sort()->values();
     }
 
-    // ---------------------------------------------------------------
-    // TAB: DASHBOARD UTAMA
-    // ---------------------------------------------------------------
-    protected function dataUtama(): array
+    protected function desaList(): Collection
     {
         $rows = $this->latestRows();
+        if ($this->filterKecamatan !== '') {
+            $rows = $rows->where('nmkec', $this->filterKecamatan);
+        }
+
+        return $rows->pluck('nmdes')->filter()->unique()->sort()->values();
+    }
+
+    protected function labelWilayah(): string
+    {
+        if ($this->filterDesa !== '') return 'SLS';
+        if ($this->filterKecamatan !== '') return 'Desa/Kelurahan';
+
+        return 'Kecamatan';
+    }
+
+    // =================================================================
+    // TAB: DASHBOARD UTAMA
+    // =================================================================
+
+    protected function dataUtama(): array
+    {
+        $rows = $this->rows();
+
         $totalRegion = $rows->sum('total_region');
         $selesai = $rows->sum(fn ($r) => $r->selesai);
         $progresTotal = $totalRegion > 0 ? round($selesai / $totalRegion * 100, 1) : 0;
 
-        // PPL lolos termin 2: progress per PPL == 100%
+        // PPL lolos termin 2: progres per PPL == 100%
         $perPpl = $rows->groupBy('username')->map(function ($g) {
             $total = $g->sum('total_region');
             $sel = $g->sum(fn ($r) => $r->selesai);
+
             return $total > 0 ? round($sel / $total * 100, 2) : 0;
         });
         $lolosTermin2 = $perPpl->filter(fn ($p) => $p >= 100)->count();
@@ -87,11 +167,16 @@ class PublicDashboard extends Component
 
         $jumlahOpenDraft = $rows->sum('open') + $rows->sum('draft');
 
-        $perKecamatan = $rows->groupBy('nmkec')->map(function ($g, $kec) {
+        // Grouping grafik menyesuaikan filter yang aktif:
+        // tanpa filter -> per kecamatan, filter kecamatan -> per desa, filter desa -> per SLS
+        $groupKey = $this->filterDesa !== '' ? 'nama_sls' : ($this->filterKecamatan !== '' ? 'nmdes' : 'nmkec');
+
+        $perWilayah = $rows->groupBy($groupKey)->map(function ($g, $nama) {
             $total = $g->sum('total_region');
             $sel = $g->sum(fn ($r) => $r->selesai);
+
             return [
-                'kecamatan' => $kec,
+                'wilayah' => $nama !== '' && $nama !== null ? $nama : '(Tidak diketahui)',
                 'total' => $total,
                 'selesai' => $sel,
                 'progres' => $total > 0 ? round($sel / $total * 100, 1) : 0,
@@ -113,22 +198,32 @@ class PublicDashboard extends Component
         ];
         $komposisi = [];
         foreach ($statusFields as $field => $label) {
-            $komposisi[] = ['label' => $label, 'value' => $rows->sum($field)];
+            $nilai = $rows->sum($field);
+            if ($nilai > 0) {
+                $komposisi[] = ['label' => $label, 'value' => $nilai];
+            }
         }
 
-        return compact('totalRegion', 'selesai', 'progresTotal', 'lolosTermin2', 'realisasiPml', 'jumlahOpenDraft', 'perKecamatan', 'komposisi');
+        return [
+            'totalRegion' => $totalRegion,
+            'selesai' => $selesai,
+            'progresTotal' => $progresTotal,
+            'lolosTermin2' => $lolosTermin2,
+            'realisasiPml' => $realisasiPml,
+            'jumlahOpenDraft' => $jumlahOpenDraft,
+            'perWilayah' => $perWilayah,
+            'labelWilayah' => $this->labelWilayah(),
+            'komposisi' => $komposisi,
+        ];
     }
 
-    // ---------------------------------------------------------------
+    // =================================================================
     // TAB: KINERJA PPL
-    // ---------------------------------------------------------------
+    // =================================================================
+
     protected function dataKinerjaPpl()
     {
-        $rows = $this->latestRows();
-
-        if ($this->filterKecamatan) {
-            $rows = $rows->where('nmkec', $this->filterKecamatan);
-        }
+        $rows = $this->rows();
 
         $grouped = $rows->groupBy('username')->map(function ($g, $email) {
             $total = $g->sum('total_region');
@@ -136,6 +231,7 @@ class PublicDashboard extends Component
             $tidakDitemukanPct = $g->map(function ($r) {
                 $unit = $r->kk_prelist_awal + $r->usaha_prelist_awal;
                 $td = $r->kk_tidak_ditemukan + $r->usaha_tidak_ditemukan;
+
                 return $unit > 0 ? ($td / $unit * 100) : 0;
             })->avg();
 
@@ -147,30 +243,31 @@ class PublicDashboard extends Component
                 'tidak_ditemukan' => round($tidakDitemukanPct ?? 0, 1),
                 'muatan' => $g->sum('muatan_total'),
                 'kecamatan' => $g->pluck('nmkec')->filter()->unique()->values()->all(),
+                'desa' => $g->pluck('nmdes')->filter()->unique()->values()->all(),
             ];
         })->filter(fn ($r) => $r['email']);
 
         if ($this->search) {
             $s = mb_strtolower($this->search);
-            $grouped = $grouped->filter(fn ($r) => str_contains(mb_strtolower($r['nama']), $s) || str_contains(mb_strtolower($r['email']), $s));
+            $grouped = $grouped->filter(fn ($r) => str_contains(mb_strtolower($r['nama']), $s)
+                || str_contains(mb_strtolower($r['email']), $s));
         }
 
         return $this->sortAndPaginate($grouped);
     }
 
-    // ---------------------------------------------------------------
+    // =================================================================
     // TAB: KINERJA PML
-    // ---------------------------------------------------------------
+    // =================================================================
+
     protected function dataKinerjaPml()
     {
-        $rows = $this->latestRows();
-        if ($this->filterKecamatan) {
-            $rows = $rows->where('nmkec', $this->filterKecamatan);
-        }
+        $rows = $this->rows();
 
         $grouped = $rows->groupBy('nama_pml')->map(function ($g, $nama) {
             $total = $g->sum('total_region');
             $sel = $g->sum(fn ($r) => $r->selesai_pml);
+
             return [
                 'nama' => $nama ?: '(Tidak diketahui)',
                 'jumlah_ppl' => $g->pluck('username')->filter()->unique()->count(),
@@ -188,15 +285,13 @@ class PublicDashboard extends Component
         return $this->sortAndPaginate($grouped, 'nama');
     }
 
-    // ---------------------------------------------------------------
+    // =================================================================
     // TAB: DETAIL SLS / BLOK SENSUS
-    // ---------------------------------------------------------------
+    // =================================================================
+
     protected function dataDetailSls()
     {
-        $rows = $this->latestRows();
-        if ($this->filterKecamatan) {
-            $rows = $rows->where('nmkec', $this->filterKecamatan);
-        }
+        $rows = $this->rows();
 
         $mapped = $rows->map(fn ($r) => [
             'region_code' => $r->region_code,
@@ -206,6 +301,8 @@ class PublicDashboard extends Component
             'ppl' => $r->nama_ppl,
             'pml' => $r->nama_pml,
             'total' => $r->total_region,
+            'draft' => $r->draft,
+            'muatan' => $r->muatan_total,
             'progres' => $r->total_region > 0 ? round($r->selesai / $r->total_region * 100, 1) : 0,
         ]);
 
@@ -213,22 +310,25 @@ class PublicDashboard extends Component
             $s = mb_strtolower($this->search);
             $mapped = $mapped->filter(fn ($r) => str_contains(mb_strtolower($r['nama_sls'] ?? ''), $s)
                 || str_contains(mb_strtolower($r['ppl'] ?? ''), $s)
+                || str_contains(mb_strtolower($r['pml'] ?? ''), $s)
                 || str_contains((string) $r['region_code'], $s));
         }
 
         return $this->sortAndPaginate($mapped, 'progres');
     }
 
-    // ---------------------------------------------------------------
+    // =================================================================
     // TAB: TIDAK DITEMUKAN
-    // ---------------------------------------------------------------
+    // =================================================================
+
     protected function dataTidakDitemukan(): array
     {
-        $rows = $this->latestRows();
+        $rows = $this->rows();
+        $groupKey = $this->filterKecamatan !== '' ? 'nmdes' : 'nmkec';
 
-        $perKecamatan = $rows->groupBy('nmkec')->map(function ($g, $kec) {
+        $perWilayah = $rows->groupBy($groupKey)->map(function ($g, $nama) {
             return [
-                'kecamatan' => $kec,
+                'wilayah' => $nama !== '' && $nama !== null ? $nama : '(Tidak diketahui)',
                 'keluarga_td' => $g->sum('kk_tidak_ditemukan'),
                 'usaha_td' => $g->sum('usaha_tidak_ditemukan'),
                 'ukdk_td' => $g->sum('ukdk_tidak_ditemukan'),
@@ -236,19 +336,21 @@ class PublicDashboard extends Component
         })->sortByDesc(fn ($r) => $r['keluarga_td'] + $r['usaha_td'] + $r['ukdk_td'])->values();
 
         return [
-            'perKecamatan' => $perKecamatan,
+            'perWilayah' => $perWilayah,
+            'labelWilayah' => $this->filterKecamatan !== '' ? 'Desa/Kelurahan' : 'Kecamatan',
             'totalKeluargaTd' => $rows->sum('kk_tidak_ditemukan'),
             'totalUsahaTd' => $rows->sum('usaha_tidak_ditemukan'),
             'totalUkdkTd' => $rows->sum('ukdk_tidak_ditemukan'),
         ];
     }
 
-    // ---------------------------------------------------------------
+    // =================================================================
     // TAB: GABUNGAN
-    // ---------------------------------------------------------------
+    // =================================================================
+
     protected function dataGabungan(): array
     {
-        $rows = $this->latestRows();
+        $rows = $this->rows();
 
         $keluargaTotal = $rows->sum(fn ($r) => $r->kk_ditemukan + $r->kk_baru + $r->kk_meninggal + $r->kk_tidak_eligible + $r->kk_tidak_dapat_ditemui + $r->kk_tidak_ditemukan);
         $keluargaTdBaru = $rows->sum(fn ($r) => $r->kk_meninggal + $r->kk_tidak_eligible + $r->kk_tidak_dapat_ditemui + $r->kk_tidak_ditemukan);
@@ -268,54 +370,104 @@ class PublicDashboard extends Component
         return compact('persenTidakDitemukan', 'muatan', 'keluargaTotal', 'usahaTotal', 'ukdkTotal', 'totalTidakDitemukan');
     }
 
-    // ---------------------------------------------------------------
+    // =================================================================
     // TAB: PRODUKTIVITAS HARIAN
-    // ---------------------------------------------------------------
+    // =================================================================
+
+    /**
+     * Untuk setiap PPL dan setiap tanggal ditampilkan 3 kolom:
+     *   - progres : selisih jumlah assignment selesai dibanding hari sebelumnya
+     *   - draft   : selisih jumlah dokumen berstatus DRAFT
+     *   - muatan  : selisih muatan total (keluarga + usaha + UKDK)
+     *
+     * Nilai absolut hari itu tetap dibawa (key `riwayat`) untuk grafik & tooltip.
+     */
     protected function dataProduktivitas(): array
     {
         $uploads = DailyUpload::orderBy('tanggal')->get();
         if ($uploads->count() < 2) {
-            return ['tanggalList' => [], 'data' => collect()];
+            return [
+                'tanggalList' => [],
+                'tanggalSemua' => [],
+                'metrik' => $this->metrikProduktivitas(),
+                'data' => collect(),
+            ];
         }
 
-        // selesai per PPL per tanggal
-        $selesaiPerTanggal = []; // [tanggal => [email => selesai]]
+        $nilaiPerTanggal = []; // [tanggal][email] => ['progres'=>, 'draft'=>, 'muatan'=>]
         $namaPpl = [];
+
         foreach ($uploads as $u) {
-            $rows = SlsDaily::where('daily_upload_id', $u->id)->get();
-            $byPpl = $rows->groupBy('username');
-            foreach ($byPpl as $email => $g) {
+            $rows = $this->applyWilayah(SlsDaily::where('daily_upload_id', $u->id)->get());
+            $tgl = $u->tanggal->format('Y-m-d');
+
+            foreach ($rows->groupBy('username') as $email => $g) {
                 if (!$email) continue;
-                $selesaiPerTanggal[$u->tanggal->format('Y-m-d')][$email] = $g->sum(fn ($r) => $r->selesai);
+                $nilaiPerTanggal[$tgl][$email] = [
+                    'progres' => (int) $g->sum(fn ($r) => $r->selesai),
+                    'draft' => (int) $g->sum('draft'),
+                    'muatan' => (int) $g->sum('muatan_total'),
+                ];
                 $namaPpl[$email] = $g->first()->nama_ppl ?: $email;
             }
         }
 
         $tanggalUrut = $uploads->pluck('tanggal')->map(fn ($t) => $t->format('Y-m-d'))->values()->all();
-        $tanggalKolom = array_slice($tanggalUrut, 1); // kolom = tanggal ke-2 dst (hasil selisih terhadap hari sebelumnya)
+        $tanggalKolom = array_slice($tanggalUrut, 1); // kolom = tanggal ke-2 dst (selisih thd hari sebelumnya)
+
+        $metrik = array_keys($this->metrikProduktivitas());
 
         $data = collect();
         foreach ($namaPpl as $email => $nama) {
             $row = ['email' => $email, 'nama' => $nama, 'harian' => [], 'riwayat' => []];
+
             foreach ($tanggalUrut as $t) {
-                $row['riwayat'][$t] = $selesaiPerTanggal[$t][$email] ?? null;
+                $row['riwayat'][$t] = $nilaiPerTanggal[$t][$email] ?? null;
             }
+
             foreach ($tanggalKolom as $i => $t) {
-                $prevT = $tanggalUrut[$i]; // index i in tanggalUrut is previous date (since tanggalKolom starts at index1)
-                $today = $selesaiPerTanggal[$t][$email] ?? null;
-                $prev = $selesaiPerTanggal[$prevT][$email] ?? null;
-                $row['harian'][$t] = ($today !== null && $prev !== null) ? ($today - $prev) : null;
+                $prevT = $tanggalUrut[$i]; // index i pada $tanggalUrut = hari sebelumnya
+                $today = $nilaiPerTanggal[$t][$email] ?? null;
+                $prev = $nilaiPerTanggal[$prevT][$email] ?? null;
+
+                foreach ($metrik as $m) {
+                    $row['harian'][$t][$m] = ($today !== null && $prev !== null)
+                        ? $today[$m] - $prev[$m]
+                        : null;
+                    $row['harian'][$t]['abs_' . $m] = $today[$m] ?? null;
+                }
             }
+
             $data->push($row);
         }
 
         if ($this->search) {
             $s = mb_strtolower($this->search);
-            $data = $data->filter(fn ($r) => str_contains(mb_strtolower($r['nama']), $s));
+            $data = $data->filter(fn ($r) => str_contains(mb_strtolower($r['nama']), $s)
+                || str_contains(mb_strtolower($r['email']), $s));
         }
 
-        return ['tanggalList' => $tanggalKolom, 'data' => $data->sortBy('nama')->values()];
+        return [
+            'tanggalList' => $tanggalKolom,
+            'tanggalSemua' => $tanggalUrut,
+            'metrik' => $this->metrikProduktivitas(),
+            'data' => $data->sortBy('nama')->values(),
+        ];
     }
+
+    /** @return array<string, string> key metrik => label kolom */
+    protected function metrikProduktivitas(): array
+    {
+        return [
+            'progres' => 'Progres',
+            'draft' => 'Draft',
+            'muatan' => 'Muatan',
+        ];
+    }
+
+    // =================================================================
+    // UTIL
+    // =================================================================
 
     protected function sortAndPaginate($collection, string $defaultField = 'progres')
     {
@@ -334,16 +486,28 @@ class PublicDashboard extends Component
         );
     }
 
+    protected function suffixFile(): string
+    {
+        $parts = array_filter([$this->filterKecamatan, $this->filterDesa]);
+
+        return empty($parts) ? '' : '-' . \Illuminate\Support\Str::slug(implode('-', $parts));
+    }
+
+    // =================================================================
+    // EXPORT
+    // =================================================================
+
     public function exportDetailSls()
     {
-        $rows = $this->latestRows();
-        $mapped = $rows->map(fn ($r) => [
+        $mapped = $this->rows()->map(fn ($r) => [
             $r->region_code, $r->nama_sls, $r->nmkec, $r->nmdes, $r->nama_ppl, $r->nama_pml,
-            $r->total_region, $r->total_region > 0 ? round($r->selesai / $r->total_region * 100, 1) : 0,
+            $r->total_region, $r->draft, $r->muatan_total,
+            $r->total_region > 0 ? round($r->selesai / $r->total_region * 100, 1) : 0,
         ]);
 
-        return SimpleExcelExporter::export('detail-sls-blok-sensus',
-            ['Kode Region', 'Nama SLS', 'Kecamatan', 'Desa', 'PPL', 'PML', 'Total', 'Progres (%)'],
+        return SimpleExcelExporter::export(
+            'detail-sls-blok-sensus' . $this->suffixFile(),
+            ['Kode Region', 'Nama SLS', 'Kecamatan', 'Desa', 'PPL', 'PML', 'Total', 'Draft', 'Muatan', 'Progres (%)'],
             $mapped->all()
         );
     }
@@ -352,10 +516,13 @@ class PublicDashboard extends Component
     {
         $data = $this->dataKinerjaPpl()->getCollection();
         $mapped = $data->map(fn ($r) => [
-            $r['nama'], $r['email'], $r['progres'], $r['tidak_ditemukan'], $r['muatan'], $r['pml'], implode(', ', $r['kecamatan']),
+            $r['nama'], $r['email'], $r['progres'], $r['tidak_ditemukan'], $r['muatan'], $r['pml'],
+            implode(', ', $r['kecamatan']), implode(', ', $r['desa'] ?? []),
         ]);
-        return SimpleExcelExporter::export('kinerja-ppl',
-            ['Nama PPL', 'Email', 'Progres (%)', 'Rata2 Tidak Ditemukan (%)', 'Muatan', 'PML', 'Kecamatan'],
+
+        return SimpleExcelExporter::export(
+            'kinerja-ppl' . $this->suffixFile(),
+            ['Nama PPL', 'Email', 'Progres (%)', 'Rata2 Tidak Ditemukan (%)', 'Muatan', 'PML', 'Kecamatan', 'Desa/Kel'],
             $mapped->all()
         );
     }
@@ -366,7 +533,9 @@ class PublicDashboard extends Component
         $mapped = $data->map(fn ($r) => [
             $r['nama'], $r['jumlah_ppl'], $r['progres'], $r['muatan'], implode(', ', $r['kecamatan']),
         ]);
-        return SimpleExcelExporter::export('kinerja-pml',
+
+        return SimpleExcelExporter::export(
+            'kinerja-pml' . $this->suffixFile(),
             ['Nama PML', 'Jumlah PPL', 'Progres (%)', 'Muatan', 'Kecamatan'],
             $mapped->all()
         );
@@ -375,16 +544,34 @@ class PublicDashboard extends Component
     public function exportProduktivitas()
     {
         $prod = $this->dataProduktivitas();
-        $headers = array_merge(['Nama PPL'], array_map(fn ($t) => \Carbon\Carbon::parse($t)->translatedFormat('d M'), $prod['tanggalList']));
-        $rows = $prod['data']->map(function ($r) use ($prod) {
-            $row = [$r['nama']];
-            foreach ($prod['tanggalList'] as $t) {
-                $row[] = $r['harian'][$t] ?? '-';
+        $metrik = $prod['metrik'];
+
+        $headers = ['Nama PPL', 'Email'];
+        foreach ($prod['tanggalList'] as $t) {
+            $label = \Carbon\Carbon::parse($t)->translatedFormat('d M');
+            foreach ($metrik as $m => $labelMetrik) {
+                $headers[] = $label . ' - ' . $labelMetrik;
             }
+        }
+
+        $rows = $prod['data']->map(function ($r) use ($prod, $metrik) {
+            $row = [$r['nama'], $r['email']];
+            foreach ($prod['tanggalList'] as $t) {
+                foreach ($metrik as $m => $labelMetrik) {
+                    $nilai = $r['harian'][$t][$m] ?? null;
+                    $row[] = $nilai === null ? '-' : $nilai;
+                }
+            }
+
             return $row;
         });
-        return SimpleExcelExporter::export('produktivitas-harian', $headers, $rows->all());
+
+        return SimpleExcelExporter::export('produktivitas-harian' . $this->suffixFile(), $headers, $rows->all());
     }
+
+    // =================================================================
+    // GRAFIK PPL
+    // =================================================================
 
     public function openPplChart(string $email)
     {
@@ -392,12 +579,23 @@ class PublicDashboard extends Component
         $row = $prod['data']->firstWhere('email', $email);
         if (!$row) return;
 
-        $uploads = DailyUpload::orderBy('tanggal')->pluck('tanggal')->map(fn ($t) => $t->format('Y-m-d'));
-        $labels = $uploads->map(fn ($t) => \Carbon\Carbon::parse($t)->translatedFormat('d M'))->values()->all();
-        $values = $uploads->map(fn ($t) => $row['riwayat'][$t] ?? null)->values()->all();
+        $tanggal = $prod['tanggalSemua'];
+        $labels = array_map(fn ($t) => \Carbon\Carbon::parse($t)->translatedFormat('d M'), $tanggal);
 
-        $this->dispatch('open-ppl-chart', labels: $labels, values: $values, nama: $row['nama']);
+        $seri = [];
+        foreach ($prod['metrik'] as $m => $label) {
+            $seri[] = [
+                'label' => $label,
+                'values' => array_map(fn ($t) => $row['riwayat'][$t][$m] ?? null, $tanggal),
+            ];
+        }
+
+        $this->dispatch('open-ppl-chart', labels: $labels, seri: $seri, nama: $row['nama']);
     }
+
+    // =================================================================
+    // RENDER
+    // =================================================================
 
     public function render()
     {
@@ -406,6 +604,7 @@ class PublicDashboard extends Component
         $viewData = [
             'latest' => $latest,
             'kecamatanList' => $this->kecamatanList(),
+            'desaList' => $this->desaList(),
         ];
 
         switch ($this->tab) {

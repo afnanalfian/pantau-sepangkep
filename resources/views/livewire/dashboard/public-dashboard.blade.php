@@ -17,9 +17,9 @@
                 @endif
             </p>
         </div>
-        <a href="{{ route('dashboard.upload') }}" 
+        <a href="{{ route('dashboard.upload') }}"
            class="text-xs font-medium text-slate-400 hover:text-orange-600 transition inline-flex items-center gap-1 group">
-            Panel unggah admin 
+            Panel unggah admin
             <span class="group-hover:translate-x-1 transition">→</span>
         </a>
     </div>
@@ -83,35 +83,44 @@
 </div>
 
 <!-- ============================================ -->
-<!-- MODAL: GRAFIK PRODUKTIVITAS PPL -->
+<!-- MODAL: GRAFIK PRODUKTIVITAS PPL              -->
+<!-- 3 seri: Progres, Draft, Muatan (kumulatif)   -->
 <!-- ============================================ -->
 <div x-data="{ open: false, chart: null, nama: '' }"
      x-on:open-ppl-chart.window="
         open = true;
         nama = $event.detail.nama;
+        const detail = $event.detail;
         $nextTick(() => {
+            const warna = ['#F59E0B', '#6366F1', '#10B981'];
             const ctx = $refs.pplCanvas.getContext('2d');
             if (chart) chart.destroy();
             chart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: $event.detail.labels,
-                    datasets: [{
-                        label: 'Progres kumulatif',
-                        data: $event.detail.values,
-                        borderColor: '#F59E0B',
-                        backgroundColor: 'rgba(245,158,11,0.1)',
+                    labels: detail.labels,
+                    datasets: (detail.seri || []).map((s, i) => ({
+                        label: s.label,
+                        data: s.values,
+                        borderColor: warna[i % warna.length],
+                        backgroundColor: warna[i % warna.length] + '20',
                         tension: 0.35,
-                        fill: true,
+                        fill: false,
                         spanGaps: true,
-                    }]
+                        pointRadius: 3,
+                        borderWidth: 2,
+                    }))
                 },
-                options: { 
-                    responsive: true, 
-                    plugins: { legend: { display: false } },
-                    scales: { 
-                        x: { grid: { display: false } },
-                        y: { grid: { display: true, color: 'rgba(0,0,0,0.05)' } }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 10 } } }
                     }
                 }
             });
@@ -120,15 +129,18 @@
      x-show="open" x-cloak
      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
      style="display:none;">
-    <div @click.outside="open = false" 
+    <div @click.outside="open = false"
          class="bg-white rounded-xl sm:rounded-2xl p-5 sm:p-6 w-full max-w-2xl shadow-2xl">
-        <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center justify-between mb-1">
             <h3 class="font-display font-bold text-lg text-slate-900" x-text="nama"></h3>
             <button @click="open = false" class="text-slate-400 hover:text-slate-600 text-2xl leading-none transition p-1">
                 ×
             </button>
         </div>
-        <canvas x-ref="pplCanvas" height="100"></canvas>
+        <p class="text-xs text-slate-400 mb-4">Posisi kumulatif progres, draft, dan muatan per tanggal unggahan.</p>
+        <div class="relative w-full" style="height: 300px;">
+            <canvas x-ref="pplCanvas"></canvas>
+        </div>
     </div>
 </div>
 

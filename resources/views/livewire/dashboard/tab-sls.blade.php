@@ -1,6 +1,9 @@
 <div wire:key="tab-sls">
 
-@include('livewire.dashboard._filter-bar', ['exportMethod' => 'exportDetailSls'])
+@include('livewire.dashboard._filter-bar', [
+    'exportMethod' => 'exportDetailSls',
+    'searchPlaceholder' => 'Cari SLS / kode region / PPL / PML...',
+])
 
 <!-- ============================================ -->
 <!-- MOBILE: CARD VIEW -->
@@ -24,7 +27,7 @@
                     <p class="font-semibold text-slate-700">{{ $r['kecamatan'] }}</p>
                 </div>
                 <div>
-                    <p class="text-slate-400">Desa</p>
+                    <p class="text-slate-400">Desa/Kel</p>
                     <p class="font-semibold text-slate-700">{{ $r['desa'] }}</p>
                 </div>
                 <div>
@@ -32,8 +35,16 @@
                     <p class="font-semibold text-slate-700">{{ $r['ppl'] }}</p>
                 </div>
                 <div>
-                    <p class="text-slate-400">Total</p>
-                    <p class="font-semibold text-slate-700">{{ $r['total'] }}</p>
+                    <p class="text-slate-400">PML</p>
+                    <p class="font-semibold text-slate-700">{{ $r['pml'] }}</p>
+                </div>
+                <div>
+                    <p class="text-slate-400">Total / Draft</p>
+                    <p class="font-semibold text-slate-700">{{ $r['total'] }} / <span class="text-amber-600">{{ $r['draft'] }}</span></p>
+                </div>
+                <div>
+                    <p class="text-slate-400">Muatan</p>
+                    <p class="font-semibold text-slate-700">{{ number_format($r['muatan']) }}</p>
                 </div>
             </div>
         </div>
@@ -42,6 +53,8 @@
             <p class="text-sm text-slate-400">Tidak ada data SLS yang cocok.</p>
         </div>
     @endforelse
+
+    <div class="pt-2">{{ $sls->links() }}</div>
 </div>
 
 <!-- ============================================ -->
@@ -55,10 +68,12 @@
                     <th class="px-4 py-3 text-left">Kode Region</th>
                     <th class="px-4 py-3 text-left">Nama SLS</th>
                     <th class="px-4 py-3 text-left">Kecamatan</th>
-                    <th class="px-4 py-3 text-left">Desa</th>
+                    <th class="px-4 py-3 text-left">Desa/Kel</th>
                     <th class="px-4 py-3 text-left">PPL</th>
                     <th class="px-4 py-3 text-left">PML</th>
                     <th class="px-4 py-3 text-center">Total</th>
+                    <th class="px-4 py-3 text-center cursor-pointer hover:text-slate-700 transition" wire:click="sortBy('draft')">Draft</th>
+                    <th class="px-4 py-3 text-center cursor-pointer hover:text-slate-700 transition" wire:click="sortBy('muatan')">Muatan</th>
                     <th class="px-4 py-3 text-center cursor-pointer hover:text-slate-700 transition" wire:click="sortBy('progres')">Progres (%)</th>
                 </tr>
             </thead>
@@ -72,6 +87,8 @@
                         <td class="px-4 py-3 text-slate-600">{{ $r['ppl'] }}</td>
                         <td class="px-4 py-3 text-slate-600">{{ $r['pml'] }}</td>
                         <td class="px-4 py-3 text-center font-semibold text-slate-700">{{ $r['total'] }}</td>
+                        <td class="px-4 py-3 text-center font-semibold {{ $r['draft'] > 0 ? 'text-amber-600' : 'text-slate-400' }}">{{ $r['draft'] }}</td>
+                        <td class="px-4 py-3 text-center text-slate-600">{{ number_format($r['muatan']) }}</td>
                         <td class="px-4 py-3 text-center">
                             <span class="px-2 py-1 rounded-full text-xs font-bold
                                 {{ $r['progres'] >= 80 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : ($r['progres'] >= 40 ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-red-50 text-red-700 border border-red-200') }}">
@@ -80,7 +97,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="8" class="px-4 py-10 text-center text-slate-400">Tidak ada data yang cocok.</td></tr>
+                    <tr><td colspan="10" class="px-4 py-10 text-center text-slate-400">Tidak ada data yang cocok.</td></tr>
                 @endforelse
             </tbody>
         </table>
