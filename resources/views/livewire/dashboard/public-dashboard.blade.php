@@ -49,7 +49,7 @@
             'pml' => 'Kinerja PML',
             'sls' => 'Detail SLS',
             'tidak-ditemukan' => 'Tidak Ditemukan',
-            'gabungan' => 'Gabungan',
+            // 'gabungan' => 'Gabungan',
             'produktivitas' => 'Produktivitas Harian',
         ] as $key => $label)
             <button wire:click="setTab('{{ $key }}')"
@@ -73,8 +73,8 @@
         @include('livewire.dashboard.tab-sls')
     @elseif($tab === 'tidak-ditemukan')
         @include('livewire.dashboard.tab-tidak-ditemukan', ['d' => $td])
-    @elseif($tab === 'gabungan')
-        @include('livewire.dashboard.tab-gabungan', ['d' => $gabungan])
+    {{-- @elseif($tab === 'gabungan')
+        @include('livewire.dashboard.tab-gabungan', ['d' => $gabungan]) --}}
     @elseif($tab === 'produktivitas')
         @include('livewire.dashboard.tab-produktivitas')
     @endif
