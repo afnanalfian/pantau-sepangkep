@@ -48,7 +48,6 @@
 <!-- ============================================ -->
 <!-- MOBILE: CARD VIEW -->
 <!-- ============================================ -->
-<p><i>31 Juli terlewat tarikan datanya karena bermasalah pada saat scraping<i></p>
 <div class="sm:hidden space-y-3">
     @forelse($prod['data'] as $r)
         <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">

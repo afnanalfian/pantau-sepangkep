@@ -90,4 +90,7 @@
             </p>
         @endif
     </div>
+    <p class="text-[10px] sm:text-xs text-slate-400 mt-3">
+        <i>31 Juli terlewat tarikan datanya karena bermasalah pada saat scraping</i>
+    </p>
 </div>
