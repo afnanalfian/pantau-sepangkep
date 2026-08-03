@@ -20,10 +20,15 @@ class PublicDashboard extends Component
     // filter yang berlaku untuk SEMUA tab
     public string $filterKecamatan = '';
     public string $filterDesa = '';
+    public string $filterPml = '';
+    public string $filterOrganik = '';
     public string $search = '';
     public int $perPage = 10;
     public string $sortField = 'progress';
     public string $sortDir = 'desc';
+
+    // produktivitas: kolom mana saja yang ditampilkan (default: semua)
+    public array $metrikAktif = ['progres', 'draft', 'muatan'];
 
     // produktivitas
     public ?string $modalPpl = null;
@@ -32,14 +37,25 @@ class PublicDashboard extends Component
         'tab',
         'filterKecamatan' => ['except' => ''],
         'filterDesa' => ['except' => ''],
+        'filterPml' => ['except' => ''],
+        'filterOrganik' => ['except' => ''],
     ];
 
     /** cache per-request supaya tidak query berulang kali dalam satu render */
     protected ?Collection $rowsCache = null;
 
+    /** daftar metrik produktivitas yang tersedia */
+    public const METRIK = [
+        'progres' => 'Progres',
+        'draft' => 'Draft',
+        'muatan' => 'Muatan',
+    ];
+
     public function updatingSearch() { $this->resetPage(); }
     public function updatingFilterKecamatan() { $this->resetPage(); }
     public function updatingFilterDesa() { $this->resetPage(); }
+    public function updatingFilterPml() { $this->resetPage(); }
+    public function updatingFilterOrganik() { $this->resetPage(); }
     public function updatingPerPage() { $this->resetPage(); }
 
     public function updatedFilterKecamatan()
@@ -49,11 +65,21 @@ class PublicDashboard extends Component
         $this->rowsCache = null;
     }
 
+    public function updatedFilterOrganik()
+    {
+        // PML yang dipilih belum tentu berada di bawah organik yang baru
+        $this->filterPml = '';
+        $this->rowsCache = null;
+    }
+
     public function resetFilter()
     {
         $this->filterKecamatan = '';
         $this->filterDesa = '';
+        $this->filterPml = '';
+        $this->filterOrganik = '';
         $this->search = '';
+        $this->rowsCache = null;
         $this->resetPage();
     }
 
@@ -97,10 +123,10 @@ class PublicDashboard extends Component
     }
 
     /**
-     * Terapkan filter wilayah (kecamatan + desa/kelurahan).
+     * Terapkan seluruh filter (kecamatan, desa/kelurahan, PML, PML organik).
      * Dipakai oleh SEMUA tab supaya filter konsisten.
      */
-    protected function applyWilayah(Collection $rows): Collection
+    protected function applyFilters(Collection $rows): Collection
     {
         if ($this->filterKecamatan !== '') {
             $rows = $rows->where('nmkec', $this->filterKecamatan);
@@ -108,29 +134,97 @@ class PublicDashboard extends Component
         if ($this->filterDesa !== '') {
             $rows = $rows->where('nmdes', $this->filterDesa);
         }
+        if ($this->filterOrganik !== '') {
+            $rows = $rows->where('pml_organik', $this->filterOrganik);
+        }
+        if ($this->filterPml !== '') {
+            $rows = $rows->where('nama_pml', $this->filterPml);
+        }
 
         return $rows->values();
     }
 
-    /** Baris upload terbaru yang sudah difilter wilayah. */
+    /** Baris upload terbaru yang sudah difilter. */
     protected function rows(): Collection
     {
-        return $this->applyWilayah($this->latestRows());
+        return $this->applyFilters($this->latestRows());
+    }
+
+    // ---- daftar opsi filter (saling menyaring) ----------------------
+
+    /**
+     * Baris upload terbaru dengan seluruh filter diterapkan KECUALI yang
+     * disebutkan di $abaikan. Dipakai untuk menyusun isi dropdown supaya
+     * setiap filter menyaring pilihan filter lainnya (mis. memilih PML
+     * membuat dropdown kecamatan hanya berisi wilayah PML tersebut).
+     *
+     * @param  array<int, string>  $abaikan  kecamatan|desa|organik|pml
+     */
+    protected function rowsKecuali(array $abaikan = []): Collection
+    {
+        $rows = $this->latestRows();
+
+        if (!in_array('kecamatan', $abaikan, true) && $this->filterKecamatan !== '') {
+            $rows = $rows->where('nmkec', $this->filterKecamatan);
+        }
+        if (!in_array('desa', $abaikan, true) && $this->filterDesa !== '') {
+            $rows = $rows->where('nmdes', $this->filterDesa);
+        }
+        if (!in_array('organik', $abaikan, true) && $this->filterOrganik !== '') {
+            $rows = $rows->where('pml_organik', $this->filterOrganik);
+        }
+        if (!in_array('pml', $abaikan, true) && $this->filterPml !== '') {
+            $rows = $rows->where('nama_pml', $this->filterPml);
+        }
+
+        return $rows->values();
     }
 
     protected function kecamatanList(): Collection
     {
-        return $this->latestRows()->pluck('nmkec')->filter()->unique()->sort()->values();
+        return $this->rowsKecuali(['kecamatan', 'desa'])
+            ->pluck('nmkec')->filter()->unique()->sort()->values();
     }
 
     protected function desaList(): Collection
     {
-        $rows = $this->latestRows();
-        if ($this->filterKecamatan !== '') {
-            $rows = $rows->where('nmkec', $this->filterKecamatan);
-        }
+        return $this->rowsKecuali(['desa'])
+            ->pluck('nmdes')->filter()->unique()->sort()->values();
+    }
 
-        return $rows->pluck('nmdes')->filter()->unique()->sort()->values();
+    /** Opsi PML organik, mengikuti filter wilayah yang sedang aktif. */
+    protected function organikList(): Collection
+    {
+        return $this->rowsKecuali(['organik', 'pml'])
+            ->pluck('pml_organik')->filter()->unique()->sort()->values();
+    }
+
+    /** Opsi PML, mengikuti filter wilayah + organik yang sedang aktif. */
+    protected function pmlList(): Collection
+    {
+        return $this->rowsKecuali(['pml'])
+            ->pluck('nama_pml')->filter()->unique()->sort()->values();
+    }
+
+    /**
+     * Kalau kombinasi filter jadi tidak masuk akal (mis. kecamatan diganti
+     * sehingga PML terpilih tidak lagi ada di daftar), filter yang menggantung
+     * dibersihkan otomatis supaya tabel tidak tampil kosong tanpa sebab.
+     */
+    protected function sanitizeFilters(array $lists): void
+    {
+        if ($this->filterKecamatan !== '' && !$lists['kecamatan']->contains($this->filterKecamatan)) {
+            $this->filterKecamatan = '';
+        }
+        if ($this->filterDesa !== '' && !$lists['desa']->contains($this->filterDesa)) {
+            $this->filterDesa = '';
+        }
+        if ($this->filterOrganik !== '' && !$lists['organik']->contains($this->filterOrganik)) {
+            $this->filterOrganik = '';
+        }
+        if ($this->filterPml !== '' && !$lists['pml']->contains($this->filterPml)) {
+            $this->filterPml = '';
+        }
     }
 
     protected function labelWilayah(): string
@@ -218,6 +312,104 @@ class PublicDashboard extends Component
     }
 
     // =================================================================
+    // TAB: PETA SLS
+    // =================================================================
+
+    /**
+     * Data untuk peta choropleth. Kunci = region_code 16 digit, sama dengan
+     * properti `idsubsls` pada file GeoJSON SLS.
+     *
+     * Warna: >=90% hijau, 50-90% oranye, <50% merah, tanpa data abu-abu.
+     */
+    protected function dataPeta(): array
+    {
+        $rows = $this->rowsPeta();
+
+        // Kamus nama petugas: nama panjang cukup dikirim sekali, tiap SLS hanya
+        // menyimpan indeksnya. Payload jadi ~4x lebih ringan untuk 1.700+ SLS.
+        $kamus = ['ppl' => [], 'pml' => [], 'org' => []];
+        $indeks = function (string $jenis, $nilai) use (&$kamus) {
+            $nilai = trim((string) $nilai) ?: '-';
+            if (!isset($kamus[$jenis][$nilai])) {
+                $kamus[$jenis][$nilai] = count($kamus[$jenis]);
+            }
+
+            return $kamus[$jenis][$nilai];
+        };
+
+        $data = [];
+        $hijau = $oranye = $merah = 0;
+
+        foreach ($rows->groupBy(fn ($r) => preg_replace('/\D/', '', (string) $r->region_code)) as $code => $g) {
+            if ($code === '') continue;
+
+            $total = (int) $g->sum('total_region');
+            $selesai = (int) $g->sum(fn ($r) => $r->selesai);
+            $progres = $total > 0 ? round($selesai / $total * 100, 1) : 0;
+
+            if ($progres >= 90) $hijau++;
+            elseif ($progres >= 50) $oranye++;
+            else $merah++;
+
+            $first = $g->first();
+
+            // urutan: progres, total, selesai, draft, muatan, idxPPL, idxPML, idxOrganik
+            $data[$code] = [
+                $progres,
+                $total,
+                $selesai,
+                (int) $g->sum('draft'),
+                (int) $g->sum('muatan_total'),
+                $indeks('ppl', $first->nama_ppl),
+                $indeks('pml', $first->nama_pml),
+                $indeks('org', $first->pml_organik),
+            ];
+        }
+
+        $totalRegion = $rows->sum('total_region');
+        $totalSelesai = $rows->sum(fn ($r) => $r->selesai);
+
+        return [
+            'data' => $data,
+            'kamus' => [
+                'ppl' => array_keys($kamus['ppl']),
+                'pml' => array_keys($kamus['pml']),
+                'org' => array_keys($kamus['org']),
+            ],
+            'jumlahSls' => count($data),
+            'hijau' => $hijau,
+            'oranye' => $oranye,
+            'merah' => $merah,
+            'progresRata' => $totalRegion > 0 ? round($totalSelesai / $totalRegion * 100, 1) : 0,
+            // kalau ada filter aktif, peta hanya menyorot SLS yang cocok
+            'adaFilter' => $this->adaFilter(),
+            'urlGeojson' => asset('geo/sls-7309.geojson'),
+        ];
+    }
+
+    /** Baris untuk peta: filter umum + kata kunci pencarian. */
+    protected function rowsPeta(): Collection
+    {
+        $rows = $this->rows();
+
+        if ($this->search !== '') {
+            $s = mb_strtolower($this->search);
+            $rows = $rows->filter(fn ($r) => str_contains(mb_strtolower((string) $r->nama_sls), $s)
+                || str_contains(mb_strtolower((string) $r->nama_ppl), $s)
+                || str_contains(mb_strtolower((string) $r->nama_pml), $s)
+                || str_contains((string) $r->region_code, $s))->values();
+        }
+
+        return $rows;
+    }
+
+    protected function adaFilter(): bool
+    {
+        return $this->filterKecamatan !== '' || $this->filterDesa !== ''
+            || $this->filterPml !== '' || $this->filterOrganik !== '' || $this->search !== '';
+    }
+
+    // =================================================================
     // TAB: KINERJA PPL
     // =================================================================
 
@@ -239,6 +431,7 @@ class PublicDashboard extends Component
                 'email' => $email,
                 'nama' => $g->first()->nama_ppl ?: $email,
                 'pml' => $g->first()->nama_pml,
+                'organik' => $g->first()->pml_organik,
                 'progres' => $total > 0 ? round($sel / $total * 100, 1) : 0,
                 'tidak_ditemukan' => round($tidakDitemukanPct ?? 0, 1),
                 'muatan' => $g->sum('muatan_total'),
@@ -270,6 +463,7 @@ class PublicDashboard extends Component
 
             return [
                 'nama' => $nama ?: '(Tidak diketahui)',
+                'organik' => $g->first()->pml_organik,
                 'jumlah_ppl' => $g->pluck('username')->filter()->unique()->count(),
                 'progres' => $total > 0 ? round($sel / $total * 100, 1) : 0,
                 'muatan' => $g->sum('muatan_total'),
@@ -375,7 +569,21 @@ class PublicDashboard extends Component
     // =================================================================
 
     /**
-     * Untuk setiap PPL dan setiap tanggal ditampilkan 3 kolom:
+     * Metrik yang benar-benar ditampilkan, mengikuti centang pengguna.
+     * Urutannya selalu mengikuti urutan baku (progres, draft, muatan)
+     * berapa pun urutan centangnya.
+     *
+     * @return array<string, string>
+     */
+    public function metrikTampil(): array
+    {
+        $aktif = array_values(array_intersect(array_keys(self::METRIK), $this->metrikAktif));
+
+        return collect(self::METRIK)->only($aktif)->all();
+    }
+
+    /**
+     * Untuk setiap PPL dan setiap tanggal ditampilkan kolom sesuai centang:
      *   - progres : selisih jumlah assignment selesai dibanding hari sebelumnya
      *   - draft   : selisih jumlah dokumen berstatus DRAFT
      *   - muatan  : selisih muatan total (keluarga + usaha + UKDK)
@@ -389,7 +597,8 @@ class PublicDashboard extends Component
             return [
                 'tanggalList' => [],
                 'tanggalSemua' => [],
-                'metrik' => $this->metrikProduktivitas(),
+                'metrik' => $this->metrikTampil(),
+                'metrikSemua' => self::METRIK,
                 'data' => collect(),
             ];
         }
@@ -398,7 +607,7 @@ class PublicDashboard extends Component
         $namaPpl = [];
 
         foreach ($uploads as $u) {
-            $rows = $this->applyWilayah(SlsDaily::where('daily_upload_id', $u->id)->get());
+            $rows = $this->applyFilters(SlsDaily::where('daily_upload_id', $u->id)->get());
             $tgl = $u->tanggal->format('Y-m-d');
 
             foreach ($rows->groupBy('username') as $email => $g) {
@@ -415,7 +624,7 @@ class PublicDashboard extends Component
         $tanggalUrut = $uploads->pluck('tanggal')->map(fn ($t) => $t->format('Y-m-d'))->values()->all();
         $tanggalKolom = array_slice($tanggalUrut, 1); // kolom = tanggal ke-2 dst (selisih thd hari sebelumnya)
 
-        $metrik = array_keys($this->metrikProduktivitas());
+        $metrik = array_keys(self::METRIK);
 
         $data = collect();
         foreach ($namaPpl as $email => $nama) {
@@ -450,18 +659,9 @@ class PublicDashboard extends Component
         return [
             'tanggalList' => $tanggalKolom,
             'tanggalSemua' => $tanggalUrut,
-            'metrik' => $this->metrikProduktivitas(),
+            'metrik' => $this->metrikTampil(),
+            'metrikSemua' => self::METRIK,
             'data' => $data->sortBy('nama')->values(),
-        ];
-    }
-
-    /** @return array<string, string> key metrik => label kolom */
-    protected function metrikProduktivitas(): array
-    {
-        return [
-            'progres' => 'Progres',
-            'draft' => 'Draft',
-            'muatan' => 'Muatan',
         ];
     }
 
@@ -488,7 +688,7 @@ class PublicDashboard extends Component
 
     protected function suffixFile(): string
     {
-        $parts = array_filter([$this->filterKecamatan, $this->filterDesa]);
+        $parts = array_filter([$this->filterKecamatan, $this->filterDesa, $this->filterOrganik, $this->filterPml]);
 
         return empty($parts) ? '' : '-' . \Illuminate\Support\Str::slug(implode('-', $parts));
     }
@@ -500,14 +700,14 @@ class PublicDashboard extends Component
     public function exportDetailSls()
     {
         $mapped = $this->rows()->map(fn ($r) => [
-            $r->region_code, $r->nama_sls, $r->nmkec, $r->nmdes, $r->nama_ppl, $r->nama_pml,
+            $r->region_code, $r->nama_sls, $r->nmkec, $r->nmdes, $r->nama_ppl, $r->nama_pml, $r->pml_organik,
             $r->total_region, $r->draft, $r->muatan_total,
             $r->total_region > 0 ? round($r->selesai / $r->total_region * 100, 1) : 0,
         ]);
 
         return SimpleExcelExporter::export(
             'detail-sls-blok-sensus' . $this->suffixFile(),
-            ['Kode Region', 'Nama SLS', 'Kecamatan', 'Desa', 'PPL', 'PML', 'Total', 'Draft', 'Muatan', 'Progres (%)'],
+            ['Kode Region', 'Nama SLS', 'Kecamatan', 'Desa', 'PPL', 'PML', 'PML Organik', 'Total', 'Draft', 'Muatan', 'Progres (%)'],
             $mapped->all()
         );
     }
@@ -516,13 +716,14 @@ class PublicDashboard extends Component
     {
         $data = $this->dataKinerjaPpl()->getCollection();
         $mapped = $data->map(fn ($r) => [
-            $r['nama'], $r['email'], $r['progres'], $r['tidak_ditemukan'], $r['muatan'], $r['pml'],
+            $r['nama'], $r['email'], $r['progres'], $r['tidak_ditemukan'], $r['muatan'],
+            $r['pml'], $r['organik'],
             implode(', ', $r['kecamatan']), implode(', ', $r['desa'] ?? []),
         ]);
 
         return SimpleExcelExporter::export(
             'kinerja-ppl' . $this->suffixFile(),
-            ['Nama PPL', 'Email', 'Progres (%)', 'Rata2 Tidak Ditemukan (%)', 'Muatan', 'PML', 'Kecamatan', 'Desa/Kel'],
+            ['Nama PPL', 'Email', 'Progres (%)', 'Rata2 Tidak Ditemukan (%)', 'Muatan', 'PML', 'PML Organik', 'Kecamatan', 'Desa/Kel'],
             $mapped->all()
         );
     }
@@ -531,12 +732,12 @@ class PublicDashboard extends Component
     {
         $data = $this->dataKinerjaPml()->getCollection();
         $mapped = $data->map(fn ($r) => [
-            $r['nama'], $r['jumlah_ppl'], $r['progres'], $r['muatan'], implode(', ', $r['kecamatan']),
+            $r['nama'], $r['organik'], $r['jumlah_ppl'], $r['progres'], $r['muatan'], implode(', ', $r['kecamatan']),
         ]);
 
         return SimpleExcelExporter::export(
             'kinerja-pml' . $this->suffixFile(),
-            ['Nama PML', 'Jumlah PPL', 'Progres (%)', 'Muatan', 'Kecamatan'],
+            ['Nama PML', 'PML Organik', 'Jumlah PPL', 'Progres (%)', 'Muatan', 'Kecamatan'],
             $mapped->all()
         );
     }
@@ -544,7 +745,7 @@ class PublicDashboard extends Component
     public function exportProduktivitas()
     {
         $prod = $this->dataProduktivitas();
-        $metrik = $prod['metrik'];
+        $metrik = $prod['metrik']; // hanya kolom yang dicentang
 
         $headers = ['Nama PPL', 'Email'];
         foreach ($prod['tanggalList'] as $t) {
@@ -569,6 +770,27 @@ class PublicDashboard extends Component
         return SimpleExcelExporter::export('produktivitas-harian' . $this->suffixFile(), $headers, $rows->all());
     }
 
+    public function exportPeta()
+    {
+        $rows = $this->rowsPeta()->map(function ($r) {
+            $progres = $r->total_region > 0 ? round($r->selesai / $r->total_region * 100, 1) : 0;
+
+            return [
+                $r->region_code, $r->nama_sls, $r->nmkec, $r->nmdes,
+                $r->nama_ppl, $r->nama_pml, $r->pml_organik,
+                $r->total_region, $r->selesai, $r->draft, $r->muatan_total, $progres,
+                $progres >= 90 ? 'Hijau (>=90%)' : ($progres >= 50 ? 'Oranye (50-90%)' : 'Merah (<50%)'),
+            ];
+        });
+
+        return SimpleExcelExporter::export(
+            'peta-progres-sls' . $this->suffixFile(),
+            ['Region Code', 'Nama SLS', 'Kecamatan', 'Desa/Kel', 'PPL', 'PML', 'PML Organik',
+                'Total', 'Selesai', 'Draft', 'Muatan', 'Progres (%)', 'Kategori'],
+            $rows->all()
+        );
+    }
+
     // =================================================================
     // GRAFIK PPL
     // =================================================================
@@ -582,8 +804,12 @@ class PublicDashboard extends Component
         $tanggal = $prod['tanggalSemua'];
         $labels = array_map(fn ($t) => \Carbon\Carbon::parse($t)->translatedFormat('d M'), $tanggal);
 
+        // grafik mengikuti kolom yang sedang dicentang; kalau tidak ada yang
+        // dicentang, tampilkan semuanya
+        $metrik = $prod['metrik'] ?: self::METRIK;
+
         $seri = [];
-        foreach ($prod['metrik'] as $m => $label) {
+        foreach ($metrik as $m => $label) {
             $seri[] = [
                 'label' => $label,
                 'values' => array_map(fn ($t) => $row['riwayat'][$t][$m] ?? null, $tanggal),
@@ -601,13 +827,26 @@ class PublicDashboard extends Component
     {
         $latest = $this->latestUpload();
 
+        $lists = [
+            'kecamatan' => $this->kecamatanList(),
+            'desa' => $this->desaList(),
+            'organik' => $this->organikList(),
+            'pml' => $this->pmlList(),
+        ];
+        $this->sanitizeFilters($lists);
+
         $viewData = [
             'latest' => $latest,
-            'kecamatanList' => $this->kecamatanList(),
-            'desaList' => $this->desaList(),
+            'kecamatanList' => $lists['kecamatan'],
+            'desaList' => $lists['desa'],
+            'organikList' => $lists['organik'],
+            'pmlList' => $lists['pml'],
         ];
 
         switch ($this->tab) {
+            case 'peta':
+                $viewData['peta'] = $this->dataPeta();
+                break;
             case 'ppl':
                 $viewData['ppl'] = $this->dataKinerjaPpl();
                 break;

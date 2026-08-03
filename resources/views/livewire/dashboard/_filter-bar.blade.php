@@ -3,9 +3,14 @@
     $showSearch   = $showSearch   ?? true;
     $showPerPage  = $showPerPage  ?? true;
     $showWilayah  = $showWilayah  ?? true;
+    $showPetugas  = $showPetugas  ?? true;
     $searchPlaceholder = $searchPlaceholder ?? 'Cari nama...';
     $kecamatanList = $kecamatanList ?? collect();
     $desaList = $desaList ?? collect();
+    $organikList = $organikList ?? collect();
+    $pmlList = $pmlList ?? collect();
+
+    $adaFilter = $filterKecamatan || $filterDesa || $filterPml || $filterOrganik || $search;
 @endphp
 
 <div class="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-3 sm:p-4 mb-4 shadow-sm">
@@ -37,11 +42,11 @@
             </div>
         @endif
 
-        <!-- Row 2: Filter wilayah -->
-        <div class="flex flex-wrap gap-2">
+        <!-- Row 2: Filter wilayah & petugas -->
+        <div class="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
             @if($showWilayah)
                 <select wire:model.live="filterKecamatan"
-                        class="flex-1 sm:flex-none sm:min-w-[190px] px-3 py-2 rounded-lg border border-slate-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition text-sm bg-white">
+                        class="sm:min-w-[170px] px-3 py-2 rounded-lg border border-slate-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition text-sm bg-white">
                     <option value="">Semua Kecamatan</option>
                     @foreach($kecamatanList as $k)
                         <option value="{{ $k }}">{{ $k }}</option>
@@ -50,17 +55,37 @@
 
                 <select wire:model.live="filterDesa"
                         @disabled($desaList->isEmpty())
-                        class="flex-1 sm:flex-none sm:min-w-[190px] px-3 py-2 rounded-lg border border-slate-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition text-sm bg-white disabled:bg-slate-50 disabled:text-slate-400">
-                    <option value="">Semua Desa/Kelurahan</option>
+                        class="sm:min-w-[170px] px-3 py-2 rounded-lg border border-slate-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition text-sm bg-white disabled:bg-slate-50 disabled:text-slate-400">
+                    <option value="">Semua Desa/Kel</option>
                     @foreach($desaList as $d)
                         <option value="{{ $d }}">{{ $d }}</option>
                     @endforeach
                 </select>
             @endif
 
+            @if($showPetugas)
+                <select wire:model.live="filterOrganik"
+                        @disabled($organikList->isEmpty())
+                        class="sm:min-w-[170px] px-3 py-2 rounded-lg border border-slate-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition text-sm bg-white disabled:bg-slate-50 disabled:text-slate-400">
+                    <option value="">Semua PML Organik</option>
+                    @foreach($organikList as $o)
+                        <option value="{{ $o }}">{{ $o }}</option>
+                    @endforeach
+                </select>
+
+                <select wire:model.live="filterPml"
+                        @disabled($pmlList->isEmpty())
+                        class="sm:min-w-[170px] px-3 py-2 rounded-lg border border-slate-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition text-sm bg-white disabled:bg-slate-50 disabled:text-slate-400">
+                    <option value="">Semua PML</option>
+                    @foreach($pmlList as $p)
+                        <option value="{{ $p }}">{{ $p }}</option>
+                    @endforeach
+                </select>
+            @endif
+
             @if($showPerPage)
                 <select wire:model.live="perPage"
-                        class="flex-1 sm:flex-none px-3 py-2 rounded-lg border border-slate-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition text-sm bg-white">
+                        class="px-3 py-2 rounded-lg border border-slate-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none transition text-sm bg-white">
                     <option value="10">10 / hal</option>
                     <option value="20">20 / hal</option>
                     <option value="50">50 / hal</option>
@@ -68,9 +93,9 @@
                 </select>
             @endif
 
-            @if($filterKecamatan || $filterDesa || $search)
+            @if($adaFilter)
                 <button wire:click="resetFilter"
-                        class="px-3 py-2 rounded-lg border border-slate-300 text-slate-500 hover:bg-slate-50 hover:text-slate-700 text-sm transition inline-flex items-center gap-1">
+                        class="col-span-2 sm:col-span-1 px-3 py-2 rounded-lg border border-slate-300 text-slate-500 hover:bg-slate-50 hover:text-slate-700 text-sm transition inline-flex items-center justify-center gap-1">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
@@ -80,14 +105,22 @@
         </div>
 
         <!-- Info filter aktif -->
-        @if($filterKecamatan || $filterDesa)
-            <p class="text-[11px] text-slate-400">
-                Menampilkan data untuk
-                <span class="font-semibold text-slate-600">{{ $filterKecamatan ?: 'semua kecamatan' }}</span>
-                @if($filterDesa)
-                    · <span class="font-semibold text-slate-600">{{ $filterDesa }}</span>
-                @endif
-            </p>
+        @if($filterKecamatan || $filterDesa || $filterPml || $filterOrganik)
+            <div class="flex flex-wrap items-center gap-1.5 text-[11px]">
+                <span class="text-slate-400">Filter aktif:</span>
+                @foreach([
+                    'Kecamatan' => $filterKecamatan,
+                    'Desa/Kel' => $filterDesa,
+                    'PML Organik' => $filterOrganik,
+                    'PML' => $filterPml,
+                ] as $labelFilter => $nilaiFilter)
+                    @if($nilaiFilter)
+                        <span class="px-2 py-0.5 rounded-full bg-orange-50 text-orange-700 border border-orange-200 font-medium">
+                            {{ $labelFilter }}: {{ $nilaiFilter }}
+                        </span>
+                    @endif
+                @endforeach
+            </div>
         @endif
     </div>
     <p class="text-[10px] sm:text-xs text-slate-400 mt-3">

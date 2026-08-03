@@ -1,6 +1,7 @@
 @php
-    $metrik = $prod['metrik'] ?? ['progres' => 'Progres', 'draft' => 'Draft', 'muatan' => 'Muatan'];
-    $jmlKolom = count($prod['tanggalList']) * count($metrik) + 1;
+    $metrikSemua = $prod['metrikSemua'] ?? ['progres' => 'Progres', 'draft' => 'Draft', 'muatan' => 'Muatan'];
+    $metrik = $prod['metrik'] ?? $metrikSemua;              // hanya yang dicentang
+    $jmlKolom = max(1, count($prod['tanggalList']) * max(count($metrik), 1) + 1);
 
     // Warna selisih: progres & muatan naik = bagus (hijau), draft naik = perlu perhatian (amber)
     $warnaSelisih = function ($metrikKey, $nilai) {
@@ -11,6 +12,13 @@
         }
         return $nilai > 0 ? 'text-emerald-600' : 'text-red-500';
     };
+
+    // warna kotak centang saat aktif
+    $warnaCentang = [
+        'progres' => 'bg-emerald-600 border-emerald-600',
+        'draft' => 'bg-amber-500 border-amber-500',
+        'muatan' => 'bg-indigo-600 border-indigo-600',
+    ];
 @endphp
 
 <div wire:key="tab-produktivitas">
@@ -22,9 +30,49 @@
 ])
 
 <!-- ============================================ -->
+<!-- PEMILIH KOLOM -->
+<!-- ============================================ -->
+<div class="bg-white rounded-xl sm:rounded-2xl border border-slate-200 p-3 sm:p-4 mb-4 shadow-sm">
+    <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">
+            Kolom ditampilkan
+        </span>
+        <div class="flex flex-wrap gap-2">
+            @foreach($metrikSemua as $key => $label)
+                @php $aktif = in_array($key, $metrikAktif); @endphp
+                <label class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border cursor-pointer select-none transition
+                    {{ $aktif ? 'border-slate-300 bg-slate-50 text-slate-700' : 'border-slate-200 bg-white text-slate-400 hover:border-slate-300' }}">
+                    <input type="checkbox"
+                           value="{{ $key }}"
+                           wire:model.live="metrikAktif"
+                           class="sr-only">
+                    <span class="w-4 h-4 rounded border-2 flex items-center justify-center transition
+                        {{ $aktif ? ($warnaCentang[$key] ?? 'bg-orange-600 border-orange-600') : 'border-slate-300 bg-white' }}">
+                        @if($aktif)
+                            <svg class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                            </svg>
+                        @endif
+                    </span>
+                    <span class="text-sm font-medium">{{ $label }}</span>
+                </label>
+            @endforeach
+        </div>
+        <span class="text-[11px] text-slate-400 sm:ml-auto">
+            {{ count($metrik) }} dari {{ count($metrikSemua) }} kolom aktif
+        </span>
+    </div>
+</div>
+
+<!-- ============================================ -->
 <!-- EMPTY STATE -->
 <!-- ============================================ -->
-@if(empty($prod['tanggalList']))
+@if(empty($metrik))
+    <div class="bg-white rounded-xl sm:rounded-2xl border border-dashed border-amber-300 bg-amber-50/40 p-10 text-center">
+        <p class="text-sm text-amber-700 font-medium">Belum ada kolom yang dipilih.</p>
+        <p class="text-xs text-amber-600 mt-1">Centang minimal satu kolom (Progres, Draft, atau Muatan) di atas.</p>
+    </div>
+@elseif(empty($prod['tanggalList']))
     <div class="bg-white rounded-xl sm:rounded-2xl border border-dashed border-slate-300 p-12 sm:p-16 text-center">
         <div class="w-12 sm:w-16 h-12 sm:h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-6 sm:w-8 h-6 sm:h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -39,9 +87,9 @@
 <!-- Legenda -->
 <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3 text-[11px] text-slate-500">
     <span class="font-semibold text-slate-600">Angka = selisih terhadap hari sebelumnya.</span>
-    <span><b class="text-slate-700">Progres</b>: assignment selesai</span>
-    <span><b class="text-slate-700">Draft</b>: dokumen berstatus draft</span>
-    <span><b class="text-slate-700">Muatan</b>: keluarga + usaha + UKDK</span>
+    @if(isset($metrik['progres']))<span><b class="text-slate-700">Progres</b>: assignment selesai</span>@endif
+    @if(isset($metrik['draft']))<span><b class="text-slate-700">Draft</b>: dokumen berstatus draft</span>@endif
+    @if(isset($metrik['muatan']))<span><b class="text-slate-700">Muatan</b>: keluarga + usaha + UKDK</span>@endif
     <span class="text-slate-400">(angka kecil di bawah = posisi kumulatif hari itu)</span>
 </div>
 
@@ -151,7 +199,7 @@
 </div>
 
 <p class="text-[10px] sm:text-xs text-slate-400 mt-3">
-    Klik nama petugas untuk melihat grafik progres, draft, dan muatan kumulatif hari ke hari.
+    Klik nama petugas untuk melihat grafik kumulatif hari ke hari (mengikuti kolom yang dicentang).
 </p>
 @endif
 

@@ -45,6 +45,7 @@
     <div class="flex flex-wrap gap-1 bg-white rounded-xl p-1.5 border border-slate-200 mb-5 sm:mb-6 overflow-x-auto shadow-sm">
         @foreach([
             'utama' => 'Dashboard Utama',
+            'peta' => 'Peta SLS',
             'ppl' => 'Kinerja PPL',
             'pml' => 'Kinerja PML',
             'sls' => 'Detail SLS',
@@ -65,6 +66,8 @@
     <!-- ============================================ -->
     @if($tab === 'utama')
         @include('livewire.dashboard.tab-utama', ['d' => $utama])
+    @elseif($tab === 'peta')
+        @include('livewire.dashboard.tab-peta', ['peta' => $peta])
     @elseif($tab === 'ppl')
         @include('livewire.dashboard.tab-ppl')
     @elseif($tab === 'pml')
