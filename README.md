@@ -3,52 +3,11 @@
 Portal informasi & pemantauan Sensus Ekonomi 2026 — BPS Kabupaten Pangkajene dan Kepulauan.
 Dibangun dengan TALL Stack: **T**ailwind CSS, **A**lpine.js, **L**aravel, **L**ivewire.
 
-Paket ini berisi **kode aplikasi kustom saja** (bukan instalasi Laravel penuh). Anda perlu menjalankan
-`composer create-project laravel/laravel` terlebih dahulu di komputer Anda sendiri, karena sandbox
-tempat kode ini dibuat tidak memiliki akses ke Packagist (registry Composer) untuk mengunduh framework
-Laravel itu sendiri. Semua kode di paket ini sudah lengkap dan siap ditempel ke instalasi Laravel segar.
-
-## 1. Buat project Laravel baru
+## Konfigurasi environment
 
 ```bash
-composer create-project laravel/laravel pantau-sepangkep
-cd pantau-sepangkep
-composer require livewire/livewire phpoffice/phpspreadsheet
-npm install
-npm install -D tailwindcss postcss autoprefixer @tailwindcss/typography
-npx tailwindcss init -p
-```
-
-## 2. Salin file dari paket ini
-
-Salin (timpa) folder-folder berikut dari paket ini ke dalam project Laravel Anda:
-
-```
-app/            -> pantau-sepangkep/app/
-database/       -> pantau-sepangkep/database/
-resources/      -> pantau-sepangkep/resources/
-routes/web.php  -> pantau-sepangkep/routes/web.php
-public/images/  -> pantau-sepangkep/public/images/
-tailwind.config.js  -> pantau-sepangkep/tailwind.config.js
-postcss.config.js   -> pantau-sepangkep/postcss.config.js
-vite.config.js      -> pantau-sepangkep/vite.config.js
-```
-
-> **Logo BPS & Sensus Ekonomi**: sesuai instruksi Anda, aplikasi ini mengasumsikan file logo disimpan
-> sebagai `public/images/logo_bps.png` dan `public/images/logo_sensus.png`. Paket ini sudah menyertakan
-> **placeholder sederhana** dengan nama file tersebut agar aplikasi tidak menampilkan gambar rusak —
-> **silakan timpa kedua file itu dengan logo asli Anda** (ukuran disarankan persegi, minimal 160x160px,
-> latar transparan/PNG).
-
-## 3. Daftarkan middleware `role`
-
-Buka `bootstrap/app.php` (Laravel 11) dan tambahkan alias middleware seperti contoh di
-`bootstrap-app-middleware-snippet.php` (disertakan dalam paket ini). Jika Anda memakai Laravel versi lama
-dengan `app/Http/Kernel.php`, ikuti petunjuk di bagian bawah file yang sama.
-
-## 4. Konfigurasi environment
-
-```bash
+composer i
+npm i
 cp .env.example .env
 php artisan key:generate
 ```
@@ -60,7 +19,7 @@ php artisan storage:link
 php artisan migrate
 ```
 
-## 5. Build asset & jalankan
+## Build asset & jalankan
 
 ```bash
 npm run build      # atau `npm run dev` saat development
@@ -69,7 +28,7 @@ php artisan serve
 
 Buka `http://localhost:8000`.
 
-## Kode Akses Login (hardcode, sesuai permintaan)
+## Kode Akses Login (hardcode)
 
 | Kode Akses | Role | Hak Akses |
 |---|---|---|
