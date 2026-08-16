@@ -476,7 +476,7 @@ class PublicDashboard extends Component
             $grouped = $grouped->filter(fn ($r) => str_contains(mb_strtolower($r['nama']), $s));
         }
 
-        return $this->sortAndPaginate($grouped, 'nama');
+        return $this->sortAndPaginate($grouped, 'progres');
     }
 
     // =================================================================
