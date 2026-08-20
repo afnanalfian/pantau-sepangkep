@@ -48,7 +48,7 @@
             'peta' => 'Peta SLS',
             'ppl' => 'Kinerja PPL',
             'pml' => 'Kinerja PML',
-            'organik' => 'PPL Organik',
+            'organik' => 'Organik BPS',
             'sls' => 'Detail SLS',
             'tidak-ditemukan' => 'Tidak Ditemukan',
             // 'gabungan' => 'Gabungan',
