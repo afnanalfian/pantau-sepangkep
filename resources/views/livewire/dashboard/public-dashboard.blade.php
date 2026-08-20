@@ -48,6 +48,7 @@
             'peta' => 'Peta SLS',
             'ppl' => 'Kinerja PPL',
             'pml' => 'Kinerja PML',
+            'organik' => 'PPL Organik',
             'sls' => 'Detail SLS',
             'tidak-ditemukan' => 'Tidak Ditemukan',
             // 'gabungan' => 'Gabungan',
@@ -72,6 +73,8 @@
         @include('livewire.dashboard.tab-ppl')
     @elseif($tab === 'pml')
         @include('livewire.dashboard.tab-pml')
+    @elseif($tab === 'organik')
+        @include('livewire.dashboard.tab-organik')
     @elseif($tab === 'sls')
         @include('livewire.dashboard.tab-sls')
     @elseif($tab === 'tidak-ditemukan')

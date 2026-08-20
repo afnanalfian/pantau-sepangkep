@@ -434,6 +434,7 @@ class PublicDashboard extends Component
                 'organik' => $g->first()->pml_organik,
                 'progres' => $total > 0 ? round($sel / $total * 100, 1) : 0,
                 'tidak_ditemukan' => round($tidakDitemukanPct ?? 0, 1),
+                'open' => (int) $g->sum('open'),
                 'muatan' => $g->sum('muatan_total'),
                 'kecamatan' => $g->pluck('nmkec')->filter()->unique()->values()->all(),
                 'desa' => $g->pluck('nmdes')->filter()->unique()->values()->all(),
@@ -466,6 +467,38 @@ class PublicDashboard extends Component
                 'organik' => $g->first()->pml_organik,
                 'jumlah_ppl' => $g->pluck('username')->filter()->unique()->count(),
                 'progres' => $total > 0 ? round($sel / $total * 100, 1) : 0,
+                'muatan' => $g->sum('muatan_total'),
+                'kecamatan' => $g->pluck('nmkec')->filter()->unique()->values()->all(),
+            ];
+        })->filter(fn ($r) => $r['nama'] !== '');
+
+        if ($this->search) {
+            $s = mb_strtolower($this->search);
+            $grouped = $grouped->filter(fn ($r) => str_contains(mb_strtolower($r['nama']), $s));
+        }
+
+        return $this->sortAndPaginate($grouped, 'progres');
+    }
+
+    // =================================================================
+    // TAB: PPL ORGANIK
+    // =================================================================
+
+    protected function dataKinerjaOrganik()
+    {
+        $rows = $this->rows();
+
+        $grouped = $rows->groupBy('pml_organik')->map(function ($g, $nama) {
+            $total = $g->sum('total_region');
+            $sel = $g->sum(fn ($r) => $r->selesai);
+
+            return [
+                'nama' => $nama ?: '(Tidak diketahui)',
+                'jumlah_pml' => $g->pluck('nama_pml')->filter()->unique()->count(),
+                'jumlah_ppl' => $g->pluck('username')->filter()->unique()->count(),
+                'progres' => $total > 0 ? round($sel / $total * 100, 1) : 0,
+                'draft' => (int) $g->sum('draft'),
+                'open' => (int) $g->sum('open'),
                 'muatan' => $g->sum('muatan_total'),
                 'kecamatan' => $g->pluck('nmkec')->filter()->unique()->values()->all(),
             ];
@@ -716,14 +749,14 @@ class PublicDashboard extends Component
     {
         $data = $this->dataKinerjaPpl()->getCollection();
         $mapped = $data->map(fn ($r) => [
-            $r['nama'], $r['email'], $r['progres'], $r['tidak_ditemukan'], $r['muatan'],
+            $r['nama'], $r['email'], $r['progres'], $r['tidak_ditemukan'], $r['open'], $r['muatan'],
             $r['pml'], $r['organik'],
             implode(', ', $r['kecamatan']), implode(', ', $r['desa'] ?? []),
         ]);
 
         return SimpleExcelExporter::export(
             'kinerja-ppl' . $this->suffixFile(),
-            ['Nama PPL', 'Email', 'Progres (%)', 'Rata2 Tidak Ditemukan (%)', 'Muatan', 'PML', 'PML Organik', 'Kecamatan', 'Desa/Kel'],
+            ['Nama PPL', 'Email', 'Progres (%)', 'Rata2 Tidak Ditemukan (%)', 'Open', 'Muatan', 'PML', 'PML Organik', 'Kecamatan', 'Desa/Kel'],
             $mapped->all()
         );
     }
@@ -738,6 +771,21 @@ class PublicDashboard extends Component
         return SimpleExcelExporter::export(
             'kinerja-pml' . $this->suffixFile(),
             ['Nama PML', 'PML Organik', 'Jumlah PPL', 'Progres (%)', 'Muatan', 'Kecamatan'],
+            $mapped->all()
+        );
+    }
+
+    public function exportKinerjaOrganik()
+    {
+        $data = $this->dataKinerjaOrganik()->getCollection();
+        $mapped = $data->map(fn ($r) => [
+            $r['nama'], $r['jumlah_pml'], $r['jumlah_ppl'], $r['progres'], $r['draft'], $r['open'], $r['muatan'],
+            implode(', ', $r['kecamatan']),
+        ]);
+
+        return SimpleExcelExporter::export(
+            'kinerja-ppl-organik' . $this->suffixFile(),
+            ['PML Organik', 'Jumlah PML', 'Jumlah PPL', 'Progres (%)', 'Draft', 'Open', 'Muatan', 'Kecamatan'],
             $mapped->all()
         );
     }
@@ -852,6 +900,9 @@ class PublicDashboard extends Component
                 break;
             case 'pml':
                 $viewData['pml'] = $this->dataKinerjaPml();
+                break;
+            case 'organik':
+                $viewData['organik'] = $this->dataKinerjaOrganik();
                 break;
             case 'sls':
                 $viewData['sls'] = $this->dataDetailSls();
