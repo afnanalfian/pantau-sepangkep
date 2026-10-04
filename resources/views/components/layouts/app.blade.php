@@ -30,6 +30,7 @@
         ['route' => 'pegawai.qna', 'label' => 'QnA', 'icon' => 'chat', 'roles' => ['admin', 'inda']],
         ['route' => 'pegawai.pengumuman', 'label' => 'Pengumuman', 'icon' => 'megaphone', 'roles' => null],
         ['route' => 'pegawai.anomali', 'label' => 'Anomali', 'icon' => 'alert', 'roles' => null],
+        ['route' => 'pegawai.missing-value', 'label' => 'Missing Value', 'icon' => 'alert', 'roles' => null],
         ['route' => 'pegawai.qg', 'label' => 'Quality Gates', 'icon' => 'shield', 'roles' => null],
         ['route' => 'pegawai.arsip', 'label' => 'Arsiparis', 'icon' => 'archive', 'roles' => null],
     ];
@@ -78,7 +79,7 @@
                     <a href="{{ route($item['route']) }}"
                        @click="if(window.innerWidth < 1024) sidebarOpen = false"
                        class="flex items-center gap-3 px-3 py-3 sm:py-2.5 rounded-lg text-sm font-medium transition active:scale-95
-                       {{ request()->routeIs($item['route']) 
+                       {{ request()->routeIs($item['route'], $item['route'] . '.*') 
                           ? 'bg-orange-600 text-white' 
                           : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
                         <x-icon name="{{ $item['icon'] }}" class="w-5 h-5 shrink-0" />

@@ -4,6 +4,9 @@ use App\Http\Controllers\AuthController;
 use App\Livewire\Anomali\AnomaliDetail;
 use App\Livewire\Anomali\AnomaliList;
 use App\Livewire\Anomali\AnomaliUpload;
+use App\Livewire\MissingValue\MissingValueDetail;
+use App\Livewire\MissingValue\MissingValueList;
+use App\Livewire\MissingValue\MissingValueUpload;
 use App\Livewire\Arsip\ArsipManager;
 use App\Livewire\Dashboard\PublicDashboard;
 use App\Livewire\Dashboard\UploadHarian;
@@ -55,6 +58,10 @@ Route::middleware(['role:pegawai,inda,anomali,qg'])->prefix('portal')->name('peg
     Route::get('/anomali', AnomaliList::class)->name('anomali');
     Route::get('/anomali/upload', AnomaliUpload::class)->name('anomali.upload');
     Route::get('/anomali/{batch}', AnomaliDetail::class)->name('anomali.detail');
+
+    Route::get('/missing-value', MissingValueList::class)->name('pegawai.missing-value');
+    Route::get('/missing-value/upload', MissingValueUpload::class)->name('pegawai.missing-value.upload');
+    Route::get('/missing-value/{batch}', MissingValueDetail::class)->name('pegawai.missing-value.detail');
 
     // Quality Gates - semua role tampil, hanya qg/admin yang CRUD struktur
     Route::get('/quality-gates', QgManager::class)->name('qg');
