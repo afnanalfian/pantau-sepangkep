@@ -3,12 +3,14 @@
 namespace App\Services;
 
 use App\Models\AnomaliMikro;
+use App\Models\MissingValueMikro;
 use App\Models\DailyUpload;
 use App\Models\Mitra;
 use App\Models\SlsDaily;
 
 /**
  * Mencari petugas (PPL / PML / PML Organik) untuk sebuah anomali mikro
+ * maupun data mikro Missing Value
  * BERDASARKAN WILAYAH, bukan berdasarkan kolom "Email Petugas" di excel anomali.
  *
  * Kunci pencarian adalah `region_code` 16 digit di tabel `sls_dailies`:
@@ -188,11 +190,12 @@ class PetugasResolver
     // =====================================================================
 
     /**
-     * Cari petugas untuk satu baris anomali.
+     * Cari petugas untuk satu baris anomali / missing value.
+     * Cukup butuh atribut: region_code, kdkab, kdkec, kddesa, kode_sls, sub_sls, email_petugas.
      *
      * @return array<string, mixed>|null
      */
-    public function resolve(AnomaliMikro $m): ?array
+    public function resolve(AnomaliMikro|MissingValueMikro $m): ?array
     {
         $this->load();
 
@@ -233,8 +236,8 @@ class PetugasResolver
     /**
      * Resolve banyak baris sekaligus (untuk tabel & export).
      *
-     * @param  iterable<AnomaliMikro>  $mikros
-     * @return array<int, array<string, mixed>|null>  id anomali mikro => petugas
+     * @param  iterable<AnomaliMikro|MissingValueMikro>  $mikros
+     * @return array<int, array<string, mixed>|null>  id mikro => petugas
      */
     public function resolveMany(iterable $mikros): array
     {
@@ -249,7 +252,7 @@ class PetugasResolver
     /**
      * Statistik kecil untuk ditampilkan di UI (berapa yang berhasil dipetakan).
      *
-     * @param  iterable<AnomaliMikro>  $mikros
+     * @param  iterable<AnomaliMikro|MissingValueMikro>  $mikros
      * @return array{total:int, ketemu:int, tidak_ketemu:int}
      */
     public function statistik(iterable $mikros): array
