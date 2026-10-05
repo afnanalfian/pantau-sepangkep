@@ -4,13 +4,14 @@ namespace App\Services;
 
 use App\Models\AnomaliMikro;
 use App\Models\MissingValueMikro;
+use App\Models\NtbNegatifMikro;
 use App\Models\DailyUpload;
 use App\Models\Mitra;
 use App\Models\SlsDaily;
 
 /**
  * Mencari petugas (PPL / PML / PML Organik) untuk sebuah anomali mikro
- * maupun data mikro Missing Value
+ * maupun data mikro Missing Value dan NTB Negatif
  * BERDASARKAN WILAYAH, bukan berdasarkan kolom "Email Petugas" di excel anomali.
  *
  * Kunci pencarian adalah `region_code` 16 digit di tabel `sls_dailies`:
@@ -195,7 +196,7 @@ class PetugasResolver
      *
      * @return array<string, mixed>|null
      */
-    public function resolve(AnomaliMikro|MissingValueMikro $m): ?array
+    public function resolve(AnomaliMikro|MissingValueMikro|NtbNegatifMikro $m): ?array
     {
         $this->load();
 
@@ -236,7 +237,7 @@ class PetugasResolver
     /**
      * Resolve banyak baris sekaligus (untuk tabel & export).
      *
-     * @param  iterable<AnomaliMikro|MissingValueMikro>  $mikros
+     * @param  iterable<AnomaliMikro|MissingValueMikro|NtbNegatifMikro>  $mikros
      * @return array<int, array<string, mixed>|null>  id mikro => petugas
      */
     public function resolveMany(iterable $mikros): array
@@ -252,7 +253,7 @@ class PetugasResolver
     /**
      * Statistik kecil untuk ditampilkan di UI (berapa yang berhasil dipetakan).
      *
-     * @param  iterable<AnomaliMikro|MissingValueMikro>  $mikros
+     * @param  iterable<AnomaliMikro|MissingValueMikro|NtbNegatifMikro>  $mikros
      * @return array{total:int, ketemu:int, tidak_ketemu:int}
      */
     public function statistik(iterable $mikros): array
