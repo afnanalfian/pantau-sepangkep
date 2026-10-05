@@ -66,9 +66,9 @@ Route::middleware(['role:pegawai,inda,anomali,qg'])->prefix('portal')->name('peg
     Route::get('/missing-value/upload', MissingValueUpload::class)->name('missing-value.upload');
     Route::get('/missing-value/{batch}', MissingValueDetail::class)->name('missing-value.detail');
 
-    Route::get('/ntb-negatif', NtbNegatifList::class)->name('pegawai.ntb-negatif');
-    Route::get('/ntb-negatif/upload', NtbNegatifUpload::class)->name('pegawai.ntb-negatif.upload');
-    Route::get('/ntb-negatif/{batch}', NtbNegatifDetail::class)->name('pegawai.ntb-negatif.detail');
+    Route::get('/ntb-negatif', NtbNegatifList::class)->name('ntb-negatif');
+    Route::get('/ntb-negatif/upload', NtbNegatifUpload::class)->name('ntb-negatif.upload');
+    Route::get('/ntb-negatif/{batch}', NtbNegatifDetail::class)->name('ntb-negatif.detail');
 
     // Quality Gates - semua role tampil, hanya qg/admin yang CRUD struktur
     Route::get('/quality-gates', QgManager::class)->name('qg');
