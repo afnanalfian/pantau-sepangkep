@@ -32,6 +32,7 @@
         ['route' => 'pegawai.anomali', 'label' => 'Anomali', 'icon' => 'alert', 'roles' => null],
         ['route' => 'pegawai.missing-value', 'label' => 'Missing Value', 'icon' => 'alert', 'roles' => null],
         ['route' => 'pegawai.ntb-negatif', 'label' => 'NTB Negatif', 'icon' => 'alert', 'roles' => null],
+        ['route' => 'pegawai.cek-kbli', 'label' => 'Cek KBLI', 'icon' => 'shield', 'roles' => null],
         ['route' => 'pegawai.qg', 'label' => 'Quality Gates', 'icon' => 'shield', 'roles' => null],
         ['route' => 'pegawai.arsip', 'label' => 'Arsiparis', 'icon' => 'archive', 'roles' => null],
     ];
