@@ -19,6 +19,9 @@ use App\Livewire\QualityGates\QgManager;
 use App\Livewire\NtbNegatif\NtbNegatifDetail;
 use App\Livewire\NtbNegatif\NtbNegatifList;
 use App\Livewire\NtbNegatif\NtbNegatifUpload;
+use App\Livewire\CekKbli\KbliDetail;
+use App\Livewire\CekKbli\KbliList;
+use App\Livewire\CekKbli\KbliUpload;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -69,6 +72,11 @@ Route::middleware(['role:pegawai,inda,anomali,qg'])->prefix('portal')->name('peg
     Route::get('/ntb-negatif', NtbNegatifList::class)->name('ntb-negatif');
     Route::get('/ntb-negatif/upload', NtbNegatifUpload::class)->name('ntb-negatif.upload');
     Route::get('/ntb-negatif/{batch}', NtbNegatifDetail::class)->name('ntb-negatif.detail');
+    
+    // Cek KBLI
+    Route::get('/cek-kbli', KbliList::class)->name('cek-kbli');
+    Route::get('/cek-kbli/upload', KbliUpload::class)->name('cek-kbli.upload');
+    Route::get('/cek-kbli/{batch}', KbliDetail::class)->name('cek-kbli.detail');
 
     // Quality Gates - semua role tampil, hanya qg/admin yang CRUD struktur
     Route::get('/quality-gates', QgManager::class)->name('qg');
