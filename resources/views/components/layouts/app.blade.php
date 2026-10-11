@@ -14,9 +14,9 @@
     <style>
         body { font-family: 'Inter', sans-serif; background:#F1F5F9; }
         .font-display { font-family: 'Space Grotesk', sans-serif; }
-        
-        button, a { 
-            -webkit-tap-highlight-color: transparent; 
+
+        button, a {
+            -webkit-tap-highlight-color: transparent;
         }
     </style>
 </head>
@@ -27,14 +27,16 @@
     $roleLabel = session('role_label');
     $menu = [
         ['route' => 'pegawai.home', 'label' => 'Beranda', 'icon' => 'home', 'roles' => null],
-        ['route' => 'pegawai.qna', 'label' => 'QnA', 'icon' => 'chat', 'roles' => ['admin', 'inda']],
-        ['route' => 'pegawai.pengumuman', 'label' => 'Pengumuman', 'icon' => 'megaphone', 'roles' => null],
+        // ['route' => 'pegawai.qna', 'label' => 'QnA', 'icon' => 'chat', 'roles' => ['admin', 'inda']],
+        // ['route' => 'pegawai.pengumuman', 'label' => 'Pengumuman', 'icon' => 'megaphone', 'roles' => null],
         ['route' => 'pegawai.anomali', 'label' => 'Anomali', 'icon' => 'alert', 'roles' => null],
         ['route' => 'pegawai.missing-value', 'label' => 'Missing Value', 'icon' => 'alert', 'roles' => null],
         ['route' => 'pegawai.ntb-negatif', 'label' => 'NTB Negatif', 'icon' => 'alert', 'roles' => null],
         ['route' => 'pegawai.cek-kbli', 'label' => 'Cek KBLI', 'icon' => 'shield', 'roles' => null],
-        ['route' => 'pegawai.qg', 'label' => 'Quality Gates', 'icon' => 'shield', 'roles' => null],
-        ['route' => 'pegawai.arsip', 'label' => 'Arsiparis', 'icon' => 'archive', 'roles' => null],
+        ['route' => 'pegawai.pemindahan-pendapatan', 'label' => 'Pemindahan Pendapatan', 'icon' => 'alert', 'roles' => null],
+        ['route' => 'pegawai.pendapatan-sejuta', 'label' => 'Pendapatan ≤ 1 Juta', 'icon' => 'alert', 'roles' => null],
+        // ['route' => 'pegawai.qg', 'label' => 'Quality Gates', 'icon' => 'shield', 'roles' => null],
+        // ['route' => 'pegawai.arsip', 'label' => 'Arsiparis', 'icon' => 'archive', 'roles' => null],
     ];
 @endphp
 
@@ -51,11 +53,11 @@
     <!-- ============================================ -->
     <!-- SIDEBAR -->
     <!-- ============================================ -->
-    <aside class="fixed lg:sticky top-0 left-0 z-50 h-screen w-72 sm:w-80 lg:w-64 bg-slate-900 border-r border-slate-800 shrink-0 flex flex-col transform transition-transform duration-300 ease-in-out 
-           -translate-x-full 
-           lg:translate-x-0" 
+    <aside class="fixed lg:sticky top-0 left-0 z-50 h-screen w-72 sm:w-80 lg:w-64 bg-slate-900 border-r border-slate-800 shrink-0 flex flex-col transform transition-transform duration-300 ease-in-out
+           -translate-x-full
+           lg:translate-x-0"
            :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
-        
+
         <!-- ========================================== -->
         <!-- SIDEBAR HEADER -->
         <!-- ========================================== -->
@@ -81,8 +83,8 @@
                     <a href="{{ route($item['route']) }}"
                        @click="if(window.innerWidth < 1024) sidebarOpen = false"
                        class="flex items-center gap-3 px-3 py-3 sm:py-2.5 rounded-lg text-sm font-medium transition active:scale-95
-                       {{ request()->routeIs($item['route'], $item['route'] . '.*') 
-                          ? 'bg-orange-600 text-white' 
+                       {{ request()->routeIs($item['route'], $item['route'] . '.*')
+                          ? 'bg-orange-600 text-white'
                           : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
                         <x-icon name="{{ $item['icon'] }}" class="w-5 h-5 shrink-0" />
                         {{ $item['label'] }}
@@ -95,20 +97,20 @@
         <!-- SIDEBAR FOOTER (flex-shrink-0) -->
         <!-- ========================================== -->
         <div class="flex-shrink-0 border-t border-slate-800">
-            
+
             <!-- Dashboard Publik -->
-            <a href="{{ route('dashboard.publik') }}" target="_blank" 
+            <a href="{{ route('dashboard.publik') }}" target="_blank"
                class="flex items-center gap-3 px-4 sm:px-6 py-3 sm:py-2.5 text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-white transition">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
                 </svg>
                 Dashboard Publik
             </a>
-            
+
             <!-- Logout - Terintegrasi dengan sidebar -->
             <form method="POST" action="{{ route('logout') }}" class="border-t border-slate-800/50">
                 @csrf
-                <button type="submit" 
+                <button type="submit"
                         class="w-full flex items-center gap-3 px-4 sm:px-6 py-3 sm:py-2.5 text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition active:scale-95">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
@@ -123,11 +125,11 @@
     <!-- MAIN CONTENT -->
     <!-- ============================================ -->
     <div class="flex-1 flex flex-col min-w-0 w-full">
-        
+
         <!-- Top Header -->
         <header class="sticky top-0 z-30 bg-white border-b border-orange-200">
             <div class="flex items-center justify-between px-4 sm:px-6 lg:px-8 h-14 sm:h-16">
-                
+
                 <div class="flex items-center gap-2 min-w-0">
                     <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-2 -ml-2 rounded-lg hover:bg-slate-100 transition active:scale-95">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -167,3 +169,4 @@
 @livewireScripts
 </body>
 </html>
+

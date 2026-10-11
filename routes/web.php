@@ -22,6 +22,12 @@ use App\Livewire\NtbNegatif\NtbNegatifUpload;
 use App\Livewire\CekKbli\KbliDetail;
 use App\Livewire\CekKbli\KbliList;
 use App\Livewire\CekKbli\KbliUpload;
+use App\Livewire\PemindahanPendapatan\PemindahanDetail;
+use App\Livewire\PemindahanPendapatan\PemindahanList;
+use App\Livewire\PemindahanPendapatan\PemindahanUpload;
+use App\Livewire\PendapatanSejuta\SejutaDetail;
+use App\Livewire\PendapatanSejuta\SejutaList;
+use App\Livewire\PendapatanSejuta\SejutaUpload;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -77,6 +83,16 @@ Route::middleware(['role:pegawai,inda,anomali,qg'])->prefix('portal')->name('peg
     Route::get('/cek-kbli', KbliList::class)->name('cek-kbli');
     Route::get('/cek-kbli/upload', KbliUpload::class)->name('cek-kbli.upload');
     Route::get('/cek-kbli/{batch}', KbliDetail::class)->name('cek-kbli.detail');
+
+    // Pemindahan Pendapatan
+    Route::get('/pemindahan-pendapatan', PemindahanList::class)->name('pemindahan-pendapatan');
+    Route::get('/pemindahan-pendapatan/upload', PemindahanUpload::class)->name('pemindahan-pendapatan.upload');
+    Route::get('/pemindahan-pendapatan/{batch}', PemindahanDetail::class)->name('pemindahan-pendapatan.detail');
+
+    // Pendapatan 1 Juta ke Bawah
+    Route::get('/pendapatan-sejuta', SejutaList::class)->name('pendapatan-sejuta');
+    Route::get('/pendapatan-sejuta/upload', SejutaUpload::class)->name('pendapatan-sejuta.upload');
+    Route::get('/pendapatan-sejuta/{batch}', SejutaDetail::class)->name('pendapatan-sejuta.detail');
 
     // Quality Gates - semua role tampil, hanya qg/admin yang CRUD struktur
     Route::get('/quality-gates', QgManager::class)->name('qg');
