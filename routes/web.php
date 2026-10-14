@@ -28,6 +28,9 @@ use App\Livewire\PemindahanPendapatan\PemindahanUpload;
 use App\Livewire\PendapatanSejuta\SejutaDetail;
 use App\Livewire\PendapatanSejuta\SejutaList;
 use App\Livewire\PendapatanSejuta\SejutaUpload;
+use App\Livewire\Anomali24\Anomali24Detail;
+use App\Livewire\Anomali24\Anomali24List;
+use App\Livewire\Anomali24\Anomali24Upload;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -83,7 +86,10 @@ Route::middleware(['role:pegawai,inda,anomali,qg'])->prefix('portal')->name('peg
     Route::get('/cek-kbli', KbliList::class)->name('cek-kbli');
     Route::get('/cek-kbli/upload', KbliUpload::class)->name('cek-kbli.upload');
     Route::get('/cek-kbli/{batch}', KbliDetail::class)->name('cek-kbli.detail');
-
+    // Anomali 24 (Anomali KBLI Tidak Sesuai 01122)
+    Route::get('/anomali-24', Anomali24List::class)->name('anomali24');
+    Route::get('/anomali-24/upload', Anomali24Upload::class)->name('anomali24.upload');
+    Route::get('/anomali-24/{batch}', Anomali24Detail::class)->name('anomali24.detail');
     // Pemindahan Pendapatan
     Route::get('/pemindahan-pendapatan', PemindahanList::class)->name('pemindahan-pendapatan');
     Route::get('/pemindahan-pendapatan/upload', PemindahanUpload::class)->name('pemindahan-pendapatan.upload');
