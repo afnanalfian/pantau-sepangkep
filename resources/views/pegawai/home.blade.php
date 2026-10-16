@@ -1,121 +1,111 @@
 <x-layouts.app :title="'Beranda'">
 
 @php
-    $role = session('role');
     $roleLabel = session('role_label');
     $jam = now()->hour;
     $sapaan = $jam < 11 ? 'Selamat pagi' : ($jam < 15 ? 'Selamat siang' : ($jam < 18 ? 'Selamat sore' : 'Selamat malam'));
+
+    // Foto 2–9 diacak setiap halaman dimuat
+    $fotoAcak = collect(range(2, 9))->shuffle();
 @endphp
 
+<style>
+    @keyframes fotoMuncul {
+        from { opacity: 0; transform: translateY(16px) scale(.98); }
+        to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .foto-muncul { opacity: 0; animation: fotoMuncul .6s ease-out forwards; }
+</style>
+
 <!-- ============================================ -->
-<!-- GREETING SECTION - Gunakan warna berbeda dari sidebar -->
+<!-- HERO: FOTO BERSAMA (1.png) -->
 <!-- ============================================ -->
-<div class="bg-gradient-to-r from-orange-600 to-orange-700 rounded-xl sm:rounded-2xl p-5 sm:p-6 lg:p-8 text-white mb-6 sm:mb-8 shadow-lg shadow-orange-600/20">
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-            <p class="text-orange-100 text-xs sm:text-sm font-medium">{{ $sapaan }},</p>
-            <h2 class="font-display font-bold text-2xl sm:text-3xl mt-0.5 sm:mt-1">{{ $roleLabel }}</h2>
-            <p class="text-orange-100/80 mt-2 max-w-xl text-xs sm:text-sm leading-relaxed">
-                Anda login ke Portal Pegawai Pantau Sepangkep. Gunakan menu di samping untuk mengakses
-                modul sesuai hak akses Anda.
-            </p>
-        </div>
-        <div class="mt-3 sm:mt-0 flex-shrink-0">
-            <span class="inline-block px-3 py-1 rounded-full bg-white/20 border border-white/30 text-white text-[10px] sm:text-xs font-medium">
-                {{ $roleLabel }}
-            </span>
-        </div>
+<section class="relative overflow-hidden rounded-2xl shadow-xl shadow-orange-600/10 mb-6 sm:mb-8 foto-muncul">
+    <img src="{{ asset('images/random/1.png') }}"
+         alt="Foto bersama tim Sensus Ekonomi 2026"
+         data-lightbox
+         class="w-full h-64 sm:h-80 lg:h-[28rem] object-cover object-center cursor-zoom-in">
+
+    <!-- Gradasi agar teks terbaca -->
+    <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent"></div>
+
+    <div class="pointer-events-none absolute inset-x-0 bottom-0 p-5 sm:p-8 lg:p-10 text-white">
+        <p class="text-orange-200 text-xs sm:text-sm font-medium tracking-wide">
+            {{ $sapaan }}{{ $roleLabel ? ', ' . $roleLabel : '' }} 👋
+        </p>
+        <h1 class="font-display font-bold text-2xl sm:text-4xl lg:text-5xl mt-1 leading-tight drop-shadow">
+            Selamat Datang di <span class="text-orange-400">Pantau Sepangkep</span>
+        </h1>
+        <p class="mt-2 text-white/80 text-xs sm:text-sm max-w-xl">
+            Bersama menyukseskan Sensus Ekonomi 2026 di Kabupaten Pangkep.
+        </p>
     </div>
+</section>
+
+<!-- ============================================ -->
+<!-- GALERI FOTO ACAK (2.png – 9.png) -->
+<!-- ============================================ -->
+<section>
+    <div class="flex items-end justify-between mb-3 sm:mb-4">
+        <h2 class="font-display font-semibold text-slate-800 text-base sm:text-lg">Momen Kebersamaan</h2>
+        <span class="text-[10px] sm:text-xs text-slate-400">Klik foto untuk memperbesar</span>
+    </div>
+
+    <div class="columns-2 md:columns-3 xl:columns-4 gap-3 sm:gap-4">
+        @foreach($fotoAcak as $i => $no)
+            <figure class="foto-muncul group relative mb-3 sm:mb-4 break-inside-avoid overflow-hidden rounded-xl bg-slate-100 shadow-sm hover:shadow-lg transition"
+                    style="animation-delay: {{ 0.15 + $loop->index * 0.08 }}s">
+                <img src="{{ asset('images/random/' . $no . '.png') }}"
+                     alt="Dokumentasi kegiatan {{ $no }}"
+                     loading="lazy"
+                     data-lightbox
+                     class="w-full h-auto block cursor-zoom-in transition duration-500 group-hover:scale-105">
+                <div class="pointer-events-none absolute inset-0 ring-1 ring-inset ring-black/5 rounded-xl group-hover:ring-orange-400/60 transition"></div>
+            </figure>
+        @endforeach
+    </div>
+</section>
+
+<!-- ============================================ -->
+<!-- LIGHTBOX -->
+<!-- ============================================ -->
+<div id="lightbox" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/90 p-4">
+    <button type="button" id="lb-close"
+            class="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white text-2xl leading-none">&times;</button>
+    <button type="button" id="lb-prev"
+            class="absolute left-2 sm:left-6 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white text-2xl leading-none">&#8249;</button>
+    <img id="lb-img" src="" alt="" class="max-h-[85vh] max-w-full rounded-lg shadow-2xl">
+    <button type="button" id="lb-next"
+            class="absolute right-2 sm:right-6 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white text-2xl leading-none">&#8250;</button>
 </div>
 
-<!-- ============================================ -->
-<!-- MENU GRID -->
-<!-- ============================================ -->
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-    
-    <!-- QnA - Admin/INDA only -->
-    @if($role === 'admin' || $role === 'inda')
-    <a href="{{ route('pegawai.qna') }}" 
-       class="group bg-white rounded-xl p-4 sm:p-5 border border-slate-200 hover:border-orange-300 hover:shadow-md transition active:scale-[0.98]">
-        <div class="w-10 sm:w-11 h-10 sm:h-11 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600 mb-3 group-hover:bg-orange-600 group-hover:text-white transition">
-            <x-icon name="chat" class="w-5 sm:w-6 h-5 sm:h-6" />
-        </div>
-        <div class="font-display font-semibold text-slate-900 text-sm sm:text-base group-hover:text-orange-600 transition">QnA</div>
-        <p class="text-xs text-slate-500 mt-0.5 sm:mt-1 leading-relaxed">Jawab pertanyaan dari publik.</p>
-    </a>
-    @endif
+<script>
+    (function () {
+        const fotos = Array.from(document.querySelectorAll('[data-lightbox]'));
+        const box = document.getElementById('lightbox');
+        const img = document.getElementById('lb-img');
+        let idx = 0;
 
-    <!-- Pengumuman -->
-    <a href="{{ route('pegawai.pengumuman') }}" 
-       class="group bg-white rounded-xl p-4 sm:p-5 border border-slate-200 hover:border-orange-300 hover:shadow-md transition active:scale-[0.98]">
-        <div class="w-10 sm:w-11 h-10 sm:h-11 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 mb-3 group-hover:bg-emerald-600 group-hover:text-white transition">
-            <x-icon name="megaphone" class="w-5 sm:w-6 h-5 sm:h-6" />
-        </div>
-        <div class="font-display font-semibold text-slate-900 text-sm sm:text-base group-hover:text-orange-600 transition">Pengumuman</div>
-        <p class="text-xs text-slate-500 mt-0.5 sm:mt-1 leading-relaxed">Buat & kelola pengumuman.</p>
-    </a>
+        const tampil = (i) => {
+            idx = (i + fotos.length) % fotos.length;
+            img.src = fotos[idx].src;
+            img.alt = fotos[idx].alt;
+        };
+        const buka = (i) => { tampil(i); box.classList.remove('hidden'); box.classList.add('flex'); document.body.style.overflow = 'hidden'; };
+        const tutup = () => { box.classList.add('hidden'); box.classList.remove('flex'); document.body.style.overflow = ''; };
 
-    <!-- Anomali -->
-    <a href="{{ route('pegawai.anomali') }}" 
-       class="group bg-white rounded-xl p-4 sm:p-5 border border-slate-200 hover:border-orange-300 hover:shadow-md transition active:scale-[0.98]">
-        <div class="w-10 sm:w-11 h-10 sm:h-11 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 mb-3 group-hover:bg-amber-600 group-hover:text-white transition">
-            <x-icon name="alert" class="w-5 sm:w-6 h-5 sm:h-6" />
-        </div>
-        <div class="font-display font-semibold text-slate-900 text-sm sm:text-base group-hover:text-orange-600 transition">Anomali</div>
-        <p class="text-xs text-slate-500 mt-0.5 sm:mt-1 leading-relaxed">Pantau anomali data pekanan.</p>
-    </a>
-
-    <!-- Quality Gates -->
-    <a href="{{ route('pegawai.qg') }}" 
-       class="group bg-white rounded-xl p-4 sm:p-5 border border-slate-200 hover:border-orange-300 hover:shadow-md transition active:scale-[0.98]">
-        <div class="w-10 sm:w-11 h-10 sm:h-11 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 mb-3 group-hover:bg-indigo-600 group-hover:text-white transition">
-            <x-icon name="shield" class="w-5 sm:w-6 h-5 sm:h-6" />
-        </div>
-        <div class="font-display font-semibold text-slate-900 text-sm sm:text-base group-hover:text-orange-600 transition">Quality Gates</div>
-        <p class="text-xs text-slate-500 mt-0.5 sm:mt-1 leading-relaxed">Ukuran kualitas & aksi preventif.</p>
-    </a>
-
-    <!-- Arsiparis -->
-    <a href="{{ route('pegawai.arsip') }}" 
-       class="group bg-white rounded-xl p-4 sm:p-5 border border-slate-200 hover:border-orange-300 hover:shadow-md transition active:scale-[0.98]">
-        <div class="w-10 sm:w-11 h-10 sm:h-11 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 mb-3 group-hover:bg-slate-700 group-hover:text-white transition">
-            <x-icon name="archive" class="w-5 sm:w-6 h-5 sm:h-6" />
-        </div>
-        <div class="font-display font-semibold text-slate-900 text-sm sm:text-base group-hover:text-orange-600 transition">Arsiparis</div>
-        <p class="text-xs text-slate-500 mt-0.5 sm:mt-1 leading-relaxed">Berkas surat & undangan sensus.</p>
-    </a>
-
-    <!-- Dashboard Publik -->
-    <a href="{{ route('dashboard.publik') }}" target="_blank" 
-       class="group bg-white rounded-xl p-4 sm:p-5 border border-slate-200 hover:border-orange-300 hover:shadow-md transition active:scale-[0.98]">
-        <div class="w-10 sm:w-11 h-10 sm:h-11 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 mb-3 group-hover:bg-slate-700 group-hover:text-white transition">
-            <x-icon name="external" class="w-5 sm:w-6 h-5 sm:h-6" />
-        </div>
-        <div class="font-display font-semibold text-slate-900 text-sm sm:text-base group-hover:text-orange-600 transition">Dashboard Publik</div>
-        <p class="text-xs text-slate-500 mt-0.5 sm:mt-1 leading-relaxed">Buka dashboard progres lapangan.</p>
-    </a>
-</div>
-
-<!-- ============================================ -->
-<!-- QUICK INFO / STATS -->
-<!-- ============================================ -->
-<div class="mt-6 sm:mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-    <div class="bg-white rounded-xl p-3 sm:p-4 border border-slate-200 text-center hover:border-orange-300 transition">
-        <div class="text-lg sm:text-xl font-bold text-orange-600">2026</div>
-        <div class="text-[10px] sm:text-xs text-slate-400">Tahun Sensus</div>
-    </div>
-    <div class="bg-white rounded-xl p-3 sm:p-4 border border-slate-200 text-center hover:border-orange-300 transition">
-        <div class="text-lg sm:text-xl font-bold text-slate-700">SE</div>
-        <div class="text-[10px] sm:text-xs text-slate-400">Sensus Ekonomi</div>
-    </div>
-    <div class="bg-white rounded-xl p-3 sm:p-4 border border-slate-200 text-center hover:border-orange-300 transition">
-        <div class="text-lg sm:text-xl font-bold text-slate-700">{{ $roleLabel }}</div>
-        <div class="text-[10px] sm:text-xs text-slate-400">Hak Akses</div>
-    </div>
-    <div class="bg-white rounded-xl p-3 sm:p-4 border border-slate-200 text-center hover:border-orange-300 transition">
-        <div class="text-lg sm:text-xl font-bold text-emerald-600">✓</div>
-        <div class="text-[10px] sm:text-xs text-slate-400">Active</div>
-    </div>
-</div>
+        fotos.forEach((f, i) => f.addEventListener('click', () => buka(i)));
+        document.getElementById('lb-close').addEventListener('click', tutup);
+        document.getElementById('lb-prev').addEventListener('click', (e) => { e.stopPropagation(); tampil(idx - 1); });
+        document.getElementById('lb-next').addEventListener('click', (e) => { e.stopPropagation(); tampil(idx + 1); });
+        box.addEventListener('click', (e) => { if (e.target === box) tutup(); });
+        document.addEventListener('keydown', (e) => {
+            if (box.classList.contains('hidden')) return;
+            if (e.key === 'Escape') tutup();
+            if (e.key === 'ArrowLeft') tampil(idx - 1);
+            if (e.key === 'ArrowRight') tampil(idx + 1);
+        });
+    })();
+</script>
 
 </x-layouts.app>
