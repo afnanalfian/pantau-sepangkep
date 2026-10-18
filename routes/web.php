@@ -31,6 +31,9 @@ use App\Livewire\PendapatanSejuta\SejutaUpload;
 use App\Livewire\Anomali24\Anomali24Detail;
 use App\Livewire\Anomali24\Anomali24List;
 use App\Livewire\Anomali24\Anomali24Upload;
+use App\Livewire\FlagRasio3\FlagRasio3Detail;
+use App\Livewire\FlagRasio3\FlagRasio3List;
+use App\Livewire\FlagRasio3\FlagRasio3Upload;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -94,6 +97,11 @@ Route::middleware(['role:pegawai,inda,anomali,qg'])->prefix('portal')->name('peg
     Route::get('/pemindahan-pendapatan', PemindahanList::class)->name('pemindahan-pendapatan');
     Route::get('/pemindahan-pendapatan/upload', PemindahanUpload::class)->name('pemindahan-pendapatan.upload');
     Route::get('/pemindahan-pendapatan/{batch}', PemindahanDetail::class)->name('pemindahan-pendapatan.detail');
+    
+    // Anomali Flag Rasio 3 (172 UB, 173 UM)
+    Route::get('/flag-rasio-3', FlagRasio3List::class)->name('flag-rasio3');
+    Route::get('/flag-rasio-3/upload', FlagRasio3Upload::class)->name('flag-rasio3.upload');
+    Route::get('/flag-rasio-3/{batch}', FlagRasio3Detail::class)->name('flag-rasio3.detail');
 
     // Pendapatan 1 Juta ke Bawah
     Route::get('/pendapatan-sejuta', SejutaList::class)->name('pendapatan-sejuta');

@@ -230,28 +230,25 @@ abstract class BasePendapatanUploadService
         return strlen($d) < $len ? str_pad($d, $len, '0', STR_PAD_LEFT) : $d;
     }
 
-    /** "16800000.00" / "16.800.000,00" / "Rp 16,800,000" -> 16800000.0 */
+    /**
+     * Angka dari berbagai format:
+     *   "Rp1,014,000,000" / "1,014,000,000.50"  -> koma = ribuan (format FASIH)
+     *   "16.800.000" / "16.800.000,00"          -> titik = ribuan (format Indonesia)
+     *   "0.997569" / "16800000.00" / "1,5"      -> desimal biasa
+     */
     protected function number(?string $v): ?float
     {
         if ($v === null) return null;
-        $v = trim($v);
-
-        // "1.200" / "16.800.000" = pemisah ribuan ala Indonesia, bukan desimal
-        if (preg_match('/^-?\d{1,3}(\.\d{3})+$/', $v)) {
-            return (float) str_replace('.', '', $v);
-        }
-        if (is_numeric($v)) return (float) $v;
 
         $v = preg_replace('/[^0-9,.\-]/', '', $v);
-        if ($v === '' || $v === '-') return null;
+        if ($v === '' || $v === '-' || $v === '.' || $v === ',') return null;
 
-        $lastComma = strrpos($v, ',');
-        $lastDot = strrpos($v, '.');
-        if ($lastComma !== false && ($lastDot === false || $lastComma > $lastDot)) {
-            // format Indonesia: titik ribuan, koma desimal
-            $v = str_replace(',', '.', str_replace('.', '', $v));
-        } else {
+        if (preg_match('/^-?\d{1,3}(,\d{3})+(\.\d+)?$/', $v)) {
             $v = str_replace(',', '', $v);
+        } elseif (preg_match('/^-?\d{1,3}(\.\d{3})+(,\d+)?$/', $v)) {
+            $v = str_replace(',', '.', str_replace('.', '', $v));
+        } elseif (substr_count($v, ',') === 1 && !str_contains($v, '.')) {
+            $v = str_replace(',', '.', $v);
         }
 
         return is_numeric($v) ? (float) $v : null;

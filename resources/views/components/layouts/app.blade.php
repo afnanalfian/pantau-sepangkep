@@ -36,6 +36,7 @@
         // ['route' => 'pegawai.cek-kbli', 'label' => 'Cek KBLI', 'icon' => 'shield', 'roles' => null],
         ['route' => 'pegawai.pemindahan-pendapatan', 'label' => 'Pemindahan Pendapatan', 'icon' => 'alert', 'roles' => null],
         ['route' => 'pegawai.pendapatan-sejuta', 'label' => 'Pendapatan ≤ 1 Juta', 'icon' => 'alert', 'roles' => null],
+        ['route' => 'pegawai.flag-rasio3', 'label' => 'Anomali Flag Rasio 3', 'icon' => 'alert', 'roles' => null],
         // ['route' => 'pegawai.qg', 'label' => 'Quality Gates', 'icon' => 'shield', 'roles' => null],
         // ['route' => 'pegawai.arsip', 'label' => 'Arsiparis', 'icon' => 'archive', 'roles' => null],
     ];
