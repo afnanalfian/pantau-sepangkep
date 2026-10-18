@@ -34,6 +34,9 @@ use App\Livewire\Anomali24\Anomali24Upload;
 use App\Livewire\FlagRasio3\FlagRasio3Detail;
 use App\Livewire\FlagRasio3\FlagRasio3List;
 use App\Livewire\FlagRasio3\FlagRasio3Upload;
+use App\Livewire\MatchingAsn\MatchingAsnDetail;
+use App\Livewire\MatchingAsn\MatchingAsnList;
+use App\Livewire\MatchingAsn\MatchingAsnUpload;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -102,6 +105,11 @@ Route::middleware(['role:pegawai,inda,anomali,qg'])->prefix('portal')->name('peg
     Route::get('/flag-rasio-3', FlagRasio3List::class)->name('flag-rasio3');
     Route::get('/flag-rasio-3/upload', FlagRasio3Upload::class)->name('flag-rasio3.upload');
     Route::get('/flag-rasio-3/{batch}', FlagRasio3Detail::class)->name('flag-rasio3.detail');
+    
+    // Matching ASN Pangkep
+    Route::get('/matching-asn', MatchingAsnList::class)->name('matching-asn');
+    Route::get('/matching-asn/upload', MatchingAsnUpload::class)->name('matching-asn.upload');
+    Route::get('/matching-asn/{batch}', MatchingAsnDetail::class)->name('matching-asn.detail');
 
     // Pendapatan 1 Juta ke Bawah
     Route::get('/pendapatan-sejuta', SejutaList::class)->name('pendapatan-sejuta');
