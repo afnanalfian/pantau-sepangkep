@@ -29,6 +29,7 @@
         ['route' => 'pegawai.home', 'label' => 'Beranda', 'icon' => 'home', 'roles' => null],
         // ['route' => 'pegawai.qna', 'label' => 'QnA', 'icon' => 'chat', 'roles' => ['admin', 'inda']],
         // ['route' => 'pegawai.pengumuman', 'label' => 'Pengumuman', 'icon' => 'megaphone', 'roles' => null],
+        ['route' => 'pegawai.ntb-flag3', 'label' => 'Anomali NTB Flag 3', 'icon' => 'alert', 'roles' => null],
         ['route' => 'pegawai.matching-asn', 'label' => 'Matching ASN Pangkep', 'icon' => 'alert', 'roles' => null],
         ['route' => 'pegawai.anomali', 'label' => 'Anomali', 'icon' => 'alert', 'roles' => null],
         ['route' => 'pegawai.missing-value', 'label' => 'Missing Value', 'icon' => 'alert', 'roles' => null],

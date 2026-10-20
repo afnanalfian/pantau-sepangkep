@@ -37,6 +37,9 @@ use App\Livewire\FlagRasio3\FlagRasio3Upload;
 use App\Livewire\MatchingAsn\MatchingAsnDetail;
 use App\Livewire\MatchingAsn\MatchingAsnList;
 use App\Livewire\MatchingAsn\MatchingAsnUpload;
+use App\Livewire\NtbFlag3\NtbFlag3Detail;
+use App\Livewire\NtbFlag3\NtbFlag3List;
+use App\Livewire\NtbFlag3\NtbFlag3Upload;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -96,6 +99,12 @@ Route::middleware(['role:pegawai,inda,anomali,qg'])->prefix('portal')->name('peg
     Route::get('/anomali-24', Anomali24List::class)->name('anomali24');
     Route::get('/anomali-24/upload', Anomali24Upload::class)->name('anomali24.upload');
     Route::get('/anomali-24/{batch}', Anomali24Detail::class)->name('anomali24.detail');
+
+    // Anomali NTB Flag 3
+    Route::get('/ntb-flag-3', NtbFlag3List::class)->name('ntb-flag3');
+    Route::get('/ntb-flag-3/upload', NtbFlag3Upload::class)->name('ntb-flag3.upload');
+    Route::get('/ntb-flag-3/{batch}', NtbFlag3Detail::class)->name('ntb-flag3.detail');
+
     // Pemindahan Pendapatan
     Route::get('/pemindahan-pendapatan', PemindahanList::class)->name('pemindahan-pendapatan');
     Route::get('/pemindahan-pendapatan/upload', PemindahanUpload::class)->name('pemindahan-pendapatan.upload');
