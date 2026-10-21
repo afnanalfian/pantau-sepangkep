@@ -5,6 +5,13 @@
         <p class="text-sm font-semibold text-slate-700">Anomali NTB Flag 3</p>
         <p class="text-xs sm:text-sm text-slate-500 mt-0.5">Usaha dengan rasio Nilai Tambah Bruto (NTB) yang terindikasi anomali. Setiap batch bersifat independen satu sama lain.</p>
     </div>
+    <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+    @if(session('role') === 'admin')
+        <a href="{{ route('pegawai.ntb-flag3.ganti-rasio') }}"
+           class="w-full sm:w-auto px-4 py-2.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold transition active:scale-95 text-center">
+            Ganti Rasio NTB <span class="ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-800 text-white">ADMIN</span>
+        </a>
+    @endif
     @if($canUpload)
         <a href="{{ route('pegawai.ntb-flag3.upload') }}"
            class="w-full sm:w-auto px-4 sm:px-5 py-2.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold transition active:scale-95 shadow-sm shadow-orange-600/20 text-center">
@@ -16,6 +23,7 @@
             </span>
         </a>
     @endif
+    </div>
 </div>
 
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">

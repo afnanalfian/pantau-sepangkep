@@ -10,7 +10,13 @@
                     Batch #{{ $batch->id }}{{ $batch->nama_file ? ' · ' . $batch->nama_file : '' }}
                 </p>
             </div>
-            <div class="flex gap-2">
+            <div class="flex flex-wrap gap-2">
+                @if(session('role') === 'admin')
+                    <a href="{{ route('pegawai.ntb-flag3.ganti-rasio', ['batch' => $batch->id]) }}"
+                       class="px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold transition">
+                        Ganti Rasio NTB
+                    </a>
+                @endif
                 <button wire:click="kembaliKeDashboard"
                         class="px-4 py-2 rounded-lg {{ $view === 'dashboard' ? 'bg-orange-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }} text-sm font-semibold transition">
                     Dashboard

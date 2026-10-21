@@ -40,6 +40,7 @@ use App\Livewire\MatchingAsn\MatchingAsnUpload;
 use App\Livewire\NtbFlag3\NtbFlag3Detail;
 use App\Livewire\NtbFlag3\NtbFlag3List;
 use App\Livewire\NtbFlag3\NtbFlag3Upload;
+use App\Livewire\NtbFlag3\NtbFlag3GantiRasio;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -104,6 +105,7 @@ Route::middleware(['role:pegawai,inda,anomali,qg'])->prefix('portal')->name('peg
     Route::get('/ntb-flag-3', NtbFlag3List::class)->name('ntb-flag3');
     Route::get('/ntb-flag-3/upload', NtbFlag3Upload::class)->name('ntb-flag3.upload');
     Route::get('/ntb-flag-3/{batch}', NtbFlag3Detail::class)->name('ntb-flag3.detail');
+    Route::get('/ntb-flag-3/ganti-rasio', NtbFlag3GantiRasio::class)->name('ntb-flag3.ganti-rasio');
 
     // Pemindahan Pendapatan
     Route::get('/pemindahan-pendapatan', PemindahanList::class)->name('pemindahan-pendapatan');
