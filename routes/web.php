@@ -104,8 +104,8 @@ Route::middleware(['role:pegawai,inda,anomali,qg'])->prefix('portal')->name('peg
     // Anomali NTB Flag 3
     Route::get('/ntb-flag-3', NtbFlag3List::class)->name('ntb-flag3');
     Route::get('/ntb-flag-3/upload', NtbFlag3Upload::class)->name('ntb-flag3.upload');
-    Route::get('/ntb-flag-3/{batch}', NtbFlag3Detail::class)->name('ntb-flag3.detail');
     Route::get('/ntb-flag-3/ganti-rasio', NtbFlag3GantiRasio::class)->name('ntb-flag3.ganti-rasio');
+    Route::get('/ntb-flag-3/{batch}', NtbFlag3Detail::class)->name('ntb-flag3.detail')->whereNumber('batch');
 
     // Pemindahan Pendapatan
     Route::get('/pemindahan-pendapatan', PemindahanList::class)->name('pemindahan-pendapatan');
