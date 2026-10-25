@@ -13,6 +13,9 @@
 @endphp
 
 <div wire:key="ntb3-dashboard-{{ $dash['total'] }}-{{ $dash['selesai'] }}">
+    <!-- PODIUM (paling atas) -->
+    @include('livewire.ntb-flag3._podium', ['podium' => $dash['podium']])
+
     <!-- STATISTIK -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4">
         @foreach([

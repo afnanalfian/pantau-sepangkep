@@ -227,7 +227,69 @@ class NtbFlag3Detail extends Component
             'hasil' => $hasil,
             'byKecamatan' => $group("COALESCE(NULLIF(nmkec, ''), '(Tidak diketahui)')"),
             'byPic' => $group("COALESCE(NULLIF(pic, ''), '(Tanpa PIC)')"),
+            'podium' => $this->podium(),
         ];
+    }
+
+    /**
+     * Peringkat PIC untuk podium (maks. 5: 3 di podium + 2 penantang).
+     *   1. persentase selesai tertinggi
+     *   2. jika sama: paling CEPAT -> selisih waktu batch diunggah s.d. penyelesaian terakhirnya
+     *   3. jika masih sama: jumlah selesai terbanyak
+     * Hanya PIC yang sudah menyelesaikan minimal 1 usaha.
+     */
+    protected function podium(int $limit = 5): array
+    {
+        $mulai = $this->batch->created_at;
+
+        return $this->baseQuery()
+            ->whereNotNull('pic')->where('pic', '!=', '')
+            ->select(
+                'pic',
+                DB::raw('COUNT(*) as total'),
+                DB::raw("SUM(CASE WHEN tindak_lanjut = 'sudah' THEN 1 ELSE 0 END) as selesai"),
+                DB::raw("MAX(CASE WHEN tindak_lanjut = 'sudah' THEN tindak_lanjut_at END) as terakhir")
+            )
+            ->groupBy('pic')
+            ->get()
+            ->filter(fn ($r) => (int) $r->selesai > 0)
+            ->map(function ($r) use ($mulai) {
+                $terakhir = $r->terakhir ? \Illuminate\Support\Carbon::parse($r->terakhir) : null;
+                $detik = ($terakhir && $mulai) ? max(0, $terakhir->getTimestamp() - $mulai->getTimestamp()) : PHP_INT_MAX;
+                $tuntas = (int) $r->selesai >= (int) $r->total;
+
+                return [
+                    'nama' => $r->pic,
+                    'total' => (int) $r->total,
+                    'selesai' => (int) $r->selesai,
+                    'persen' => round($r->selesai / $r->total * 100, 1),
+                    'tuntas' => $tuntas,
+                    'detik' => $detik,
+                    'durasi' => $detik === PHP_INT_MAX ? null : $this->durasi($detik),
+                    'terakhir' => $terakhir?->diffForHumans(),
+                ];
+            })
+            ->sort(fn ($a, $b) => [$b['persen'], $a['detik'], $b['selesai']] <=> [$a['persen'], $b['detik'], $a['selesai']])
+            ->take($limit)
+            ->values()
+            ->all();
+    }
+
+    /** 93784 detik -> "1 hari 2 jam" */
+    protected function durasi(int $detik): string
+    {
+        if ($detik < 60) return 'kurang dari 1 menit';
+
+        $bagian = [];
+        foreach (['hari' => 86400, 'jam' => 3600, 'menit' => 60] as $label => $n) {
+            if ($detik >= $n) {
+                $bagian[] = intdiv($detik, $n) . ' ' . $label;
+                $detik %= $n;
+            }
+            if (count($bagian) === 2) break;
+        }
+
+        return implode(' ', $bagian);
     }
 
     // =================================================================
