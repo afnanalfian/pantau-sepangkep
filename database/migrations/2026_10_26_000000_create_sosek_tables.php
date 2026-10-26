@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Anomali Sosek — 7 jenis anomali dalam SATU tabel data mikro.
+ * Anomali Sosek — semua jenis anomali (dari satu workbook multi-sheet) dalam SATU tabel data mikro.
  */
 return new class extends Migration
 {

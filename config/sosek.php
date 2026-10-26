@@ -22,4 +22,11 @@ return [
     */
     'cari_region_dari_anomali' => true,
 
+    /*
+    | Jenis anomali yang TIDAK diimpor walau sheet-nya ada di workbook.
+    | 'nik_duplikat' = sheet "R.27 ... NIK duplikat nasional" (ribuan baris) — hapus dari
+    | daftar ini bila ingin ikut dimonitor.
+    */
+    'jenis_nonaktif' => ['nik_duplikat'],
+
 ];

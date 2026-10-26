@@ -46,6 +46,10 @@ class SosekUploadService
         'daya_label' => ['daya_terpasang_label'],
         'daya_value' => ['daya_terpasang_value'],
         'jumlah_ac' => ['jumlah_ac'],
+        'sumber_penerangan' => ['sumber_penerangan_label', 'sumber_penerangan_value', 'sumber_penerangan'],
+        'jumlah_mobil' => ['jumlah_mobil_efektif', 'jumlah_mobil_new', 'jumlah_mobil'],
+        'nilai_mobil' => ['nilai_mobil'],
+        'jumlah_duplikasi' => ['jumlah_duplikasi_nasional', 'jumlah_duplikasi'],
         'daftar_remark' => ['daftar_remark'],
         'running_time' => ['running_time'],
     ];
@@ -55,28 +59,58 @@ class SosekUploadService
     // =====================================================================
 
     /**
-     * @param  array<string, UploadedFile|null>  $files  jenis => file (boleh sebagian)
-     * Tanggal yang sama diunggah ulang -> hanya jenis yang diunggah yang diganti.
+     * Import SATU workbook berisi banyak sheet (satu sheet per jenis anomali).
+     * Setiap sheet dikenali otomatis dari kolom khas & judulnya (urutan/nama sheet bebas).
+     * Tanggal sama diunggah ulang -> jenis yang ada di workbook diganti, jenis lain tetap.
      */
-    public function importBatch(array $files, string $tanggal, ?string $uploadedBy = null): SosekBatch
+    public function importWorkbook(UploadedFile $file, string $tanggal, ?string $uploadedBy = null): SosekBatch
     {
-        $files = array_filter($files);
-        if (empty($files)) {
-            throw new \Exception('Pilih minimal satu file anomali.');
+        $aktif = SosekMikro::jenisOptions();
+        $parsed = [];          // jenis => records
+        $sheetJenis = [];      // jenis => [nama sheet]
+        $dilewati = [];        // nama sheet => alasan
+
+        foreach ($this->readSheets($file) as $namaSheet => $rows) {
+            [$headerIdx, $colMap, $slugs] = $this->mapColumns($rows, $namaSheet, false);
+            if ($headerIdx === null) {
+                $dilewati[$namaSheet] = 'header tidak dikenali';
+                continue;
+            }
+
+            $judul = $this->judulSheet($rows, $headerIdx, $namaSheet);
+            $jenis = $this->kenaliJenis($slugs, $judul);
+
+            if ($jenis === null) {
+                $dilewati[$namaSheet] = 'jenis anomali tidak dikenali';
+                continue;
+            }
+            if (!isset($aktif[$jenis])) {
+                $dilewati[$namaSheet] = 'jenis "' . SosekMikro::semuaJenis()[$jenis]['label'] . '" dinonaktifkan';
+                continue;
+            }
+
+            $records = $this->parseRows($rows, $headerIdx, $colMap, $jenis, $namaSheet);
+            $parsed[$jenis] = array_merge($parsed[$jenis] ?? [], $records);
+            $sheetJenis[$jenis][] = $namaSheet;
         }
 
-        $jenisOpts = SosekMikro::jenisOptions();
-        $parsed = [];
-        foreach ($files as $jenis => $file) {
-            if (!isset($jenisOpts[$jenis])) continue;
-            $parsed[$jenis] = $this->parseFile($file, $jenis);
+        if (empty($parsed)) {
+            throw new \Exception('Tidak ada sheet anomali yang dikenali di file ' . $file->getClientOriginalName() . '.'
+                . ($dilewati ? ' Sheet: ' . implode('; ', array_map(fn ($k, $v) => "$k ($v)", array_keys($dilewati), $dilewati)) : ''));
         }
 
-        $batch = DB::transaction(function () use ($parsed, $files, $tanggal, $uploadedBy) {
+        // nomor urut ulang per jenis (bila satu jenis tersebar di beberapa sheet)
+        foreach ($parsed as $jenis => &$records) {
+            foreach ($records as $i => &$r) $r['no'] = $i + 1;
+            unset($r);
+        }
+        unset($records);
+
+        $batch = DB::transaction(function () use ($parsed, $file, $tanggal, $uploadedBy, $sheetJenis) {
             $batch = SosekBatch::firstOrNew(['tanggal' => $tanggal]);
             $nama = $batch->nama_file ?? [];
-            foreach ($files as $jenis => $file) {
-                $nama[$jenis] = $file->getClientOriginalName();
+            foreach ($sheetJenis as $jenis => $sheets) {
+                $nama[$jenis] = $file->getClientOriginalName() . ' › ' . implode(', ', $sheets);
             }
             $batch->nama_file = $nama;
             $batch->uploaded_by = $uploadedBy;
@@ -93,31 +127,59 @@ class SosekUploadService
             return $batch;
         });
 
-        // isi wilayah & PIC untuk SELURUH batch (baris lama pun bisa ikut terisi
-        // berkat assignment_id dari file yang baru diunggah)
+        $this->ringkasan['dilewati'] = $dilewati;
         $this->ringkasan['pic'] = $this->lengkapiWilayahDanPic($batch, $tanggal);
 
         return $batch->fresh();
     }
 
-    /** @return list<array<string, mixed>> */
-    protected function parseFile(UploadedFile $file, string $jenis): array
+    /**
+     * Tentukan jenis anomali sebuah sheet.
+     * Urutan penting: kolom yang paling khas diperiksa lebih dulu.
+     *
+     * @param  array<int,string>  $slugs  header sheet (sudah di-slug)
+     */
+    public function kenaliJenis(array $slugs, string $judul): ?string
     {
-        $info = SosekMikro::jenisOptions()[$jenis];
-        $rows = $this->readRows($file);
-        [$headerIdx, $colMap, $slugs] = $this->mapColumns($rows, $file->getClientOriginalName());
+        $ada = fn (string ...$kolom) => (bool) array_intersect(array_map(fn ($k) => $this->slug($k), $kolom), $slugs);
+        $j = mb_strtolower($judul);
+        $judulMemuat = fn (string ...$kata) => !array_filter($kata, fn ($k) => !str_contains($j, $k));
 
-        // cegah salah slot: file harus punya salah satu kolom khas jenis ini
-        $punya = array_filter($info['wajib'], fn ($k) => in_array($this->slug($k), $slugs, true));
-        if (!$punya) {
-            throw new \Exception(sprintf(
-                'File "%s" yang diunggah di slot %d (%s) tidak memiliki kolom %s. Pastikan file tidak tertukar slot.',
-                $file->getClientOriginalName(), $info['no'], $info['label'], implode(' / ', $info['wajib'])
-            ));
+        return match (true) {
+            $ada('jumlah_duplikasi_nasional') => 'nik_duplikat',
+            $ada('sumber_penerangan_value', 'sumber_penerangan_label', 'jumlah_mobil', 'jumlah_mobil_efektif') => 'penerangan_mobil',
+            $ada('jumlah_ac') => 'ac_450',
+            $ada('kode_profesi', 'profesi_label') => 'profesi',
+            $ada('umur_ak') => 'umur',
+            $ada('kode_prov_kk') => 'kk_prov',
+            $ada('tgl_lahir', 'thn_lahir') => 'nik_kembar',
+            $ada('nik_dtsen') => $judulMemuat('kembar') ? 'nik_kembar' : 'nik_prov',
+            $ada('no_kk') => $judulMemuat('provinsi') ? 'kk_prov' : 'kk_kembar',
+            // cadangan: hanya dari judul
+            $judulMemuat('penerangan') => 'penerangan_mobil',
+            $judulMemuat('450') => 'ac_450',
+            $judulMemuat('profesi') => 'profesi',
+            $judulMemuat('umur') => 'umur',
+            $judulMemuat('duplikat') => 'nik_duplikat',
+            default => null,
+        };
+    }
+
+    /** Judul tabel = baris di atas header yang berisi satu teks (mis. "R.3 Keluarga dengan ..."). */
+    protected function judulSheet(array $rows, int $headerIdx, string $namaSheet): string
+    {
+        for ($i = $headerIdx - 1; $i >= 0; $i--) {
+            $isi = array_values(array_filter($rows[$i] ?? [], fn ($v) => $v !== null && trim((string) $v) !== ''));
+            if (count($isi) >= 1) return (string) $isi[0];
         }
 
+        return $namaSheet;
+    }
+
+    /** @return list<array<string, mixed>> */
+    protected function parseRows(array $rows, int $headerIdx, array $colMap, string $jenis, string $namaSheet): array
+    {
         $records = [];
-        $no = 0;
         $now = now();
 
         for ($i = $headerIdx + 1; $i < count($rows); $i++) {
@@ -137,7 +199,8 @@ class SosekUploadService
 
             $rec = [
                 'jenis' => $jenis,
-                'no' => ++$no,
+                'sheet' => mb_substr($namaSheet, 0, 100),
+                'no' => 0,
                 'assignment_id' => $assignment,
                 'link_fasih_sm' => $link,
                 'kdkec' => $kdkec,
@@ -156,6 +219,10 @@ class SosekUploadService
                 'daya_terpasang' => $g('daya_label') ?? $g('daya_value'),
                 'jml_meteran' => is_numeric($m = $g('jml_meteran')) ? (int) $m : null,
                 'jumlah_ac' => is_numeric($a = $g('jumlah_ac')) ? (int) $a : null,
+                'sumber_penerangan' => $g('sumber_penerangan'),
+                'jumlah_mobil' => is_numeric($mb = $g('jumlah_mobil')) ? (int) $mb : null,
+                'nilai_mobil' => is_numeric($nm = $g('nilai_mobil')) ? (float) $nm : null,
+                'jumlah_duplikasi' => is_numeric($dp = $g('jumlah_duplikasi')) ? (int) $dp : null,
                 'daftar_remark' => $g('daftar_remark'),
                 'running_time' => $this->waktu($g('running_time')),
                 'tindak_lanjut' => 'belum',
@@ -165,10 +232,6 @@ class SosekUploadService
             $rec['nilai_anomali'] = mb_substr($this->nilaiAnomali($jenis, $rec, $g('kode_prov_kk')), 0, 500);
 
             $records[] = $rec;
-        }
-
-        if (empty($records)) {
-            throw new \Exception('Tidak ada baris data yang valid pada file ' . $file->getClientOriginalName() . ' (slot ' . $info['no'] . ').');
         }
 
         return $records;
@@ -189,6 +252,10 @@ class SosekUploadService
             'ac_450' => 'Daya ' . ($r['daya_terpasang'] ? preg_replace('/^\d+\.\s*/', '', $r['daya_terpasang']) : '?')
                 . ' · AC ' . ($r['jumlah_ac'] ?? '?') . ' unit'
                 . ($r['jml_meteran'] !== null ? ' · ' . $r['jml_meteran'] . ' meteran' : ''),
+            'penerangan_mobil' => 'Penerangan bukan listrik' . ($r['sumber_penerangan'] ? ' (kode ' . $r['sumber_penerangan'] . ')' : '')
+                . ' · ' . ($r['jumlah_mobil'] ?? '?') . ' mobil'
+                . ($r['nilai_mobil'] ? ' senilai Rp ' . number_format($r['nilai_mobil'], 0, ',', '.') : ''),
+            'nik_duplikat' => 'NIK ' . ($r['nik'] ?? '?') . ' muncul ' . ($r['jumlah_duplikasi'] ?? '?') . 'x secara nasional',
             default => '',
         };
     }
@@ -333,19 +400,25 @@ class SosekUploadService
     // HELPER
     // =====================================================================
 
-    protected function readRows(UploadedFile $file): array
+    /** @return array<string, array> nama sheet => baris (nilai mentah) */
+    protected function readSheets(UploadedFile $file): array
     {
         $reader = IOFactory::createReaderForFile($file->getRealPath());
         if (method_exists($reader, 'setReadDataOnly')) {
             $reader->setReadDataOnly(true);
         }
 
-        // nilai mentah supaya NIK/KK 16 digit tidak jadi 7,31E+15
-        return $reader->load($file->getRealPath())->getActiveSheet()->toArray(null, true, false, false);
+        $out = [];
+        foreach ($reader->load($file->getRealPath())->getAllSheets() as $sheet) {
+            // nilai mentah supaya NIK/KK/ID SubSLS 16 digit tidak jadi 7,31E+15
+            $out[$sheet->getTitle()] = $sheet->toArray(null, true, false, false);
+        }
+
+        return $out;
     }
 
-    /** @return array{0:int, 1:array<string,int|null>, 2:array<int,string>} */
-    protected function mapColumns(array $rows, string $fileName): array
+    /** @return array{0:?int, 1:array<string,int|null>, 2:array<int,string>} */
+    protected function mapColumns(array $rows, string $fileName, bool $wajib = true): array
     {
         $known = [];
         foreach (self::SPEC as $aliases) {
@@ -378,6 +451,7 @@ class SosekUploadService
         }
 
         if ($colMap['assignment_id'] === null && $colMap['link_fasih_sm'] === null) {
+            if (!$wajib) return [null, [], []];
             throw new \Exception(
                 'Kolom "assignment_id" atau "link_fasih_sm" tidak ditemukan pada file ' . $fileName . '. ' .
                 'Header yang terbaca: ' . implode(' | ', array_filter(array_map('strval', $rows[$headerIdx] ?? [])))
@@ -418,7 +492,7 @@ class SosekUploadService
             }
         }
 
-        return mb_substr($v, 0, 30);
+        return mb_substr(str_replace('T', ' ', $v), 0, 30);
     }
 
     protected function kosongKeNull($v): ?string

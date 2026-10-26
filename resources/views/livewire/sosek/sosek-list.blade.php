@@ -3,7 +3,7 @@
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5 sm:mb-6">
     <div>
         <p class="text-sm font-semibold text-slate-700">Anomali Sosek</p>
-        <p class="text-xs sm:text-sm text-slate-500 mt-0.5">7 jenis anomali sosial ekonomi (umur, profesi, NIK/KK, daya listrik &amp; AC) dalam satu daftar. Setiap batch bersifat independen satu sama lain.</p>
+        <p class="text-xs sm:text-sm text-slate-500 mt-0.5">Anomali sosial ekonomi (umur, profesi, NIK/KK, listrik &amp; AC, penerangan &amp; mobil) dari satu file Excel, dalam satu daftar. Setiap batch bersifat independen satu sama lain.</p>
     </div>
     <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
     @if($canUpload)

@@ -6,7 +6,7 @@
                 <h2 class="text-xl sm:text-2xl font-bold text-slate-800 mt-1">
                     Anomali Sosek - {{ $batch->tanggal->translatedFormat('d F Y') }}
                 </h2>
-                <p class="text-sm text-slate-500 mt-1">Batch #{{ $batch->id }} · {{ count($batch->nama_file ?? []) }} dari 7 jenis diunggah</p>
+                <p class="text-sm text-slate-500 mt-1">Batch #{{ $batch->id }} · {{ count(array_intersect_key($batch->nama_file ?? [], $jenisOptions)) }} dari {{ count($jenisOptions) }} jenis terisi</p>
             </div>
             <div class="flex flex-wrap gap-2">
                 @if(session('role') === 'admin')

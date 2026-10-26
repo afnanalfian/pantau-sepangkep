@@ -335,12 +335,12 @@ class SosekDetail extends Component
     public function exportMikro()
     {
         $rows = $this->mikroQuery()->orderBy('jenis')->orderBy('nmkec')->orderBy('nmdesa')->orderBy('no')->get();
-        $jenisOpt = M::jenisOptions();
 
         $headers = [
             'No', 'Jenis Anomali', 'Keterangan Anomali', 'Assignment ID', 'Kecamatan', 'Desa/Kel', 'Nama SLS', 'ID SubSLS (Level 6)',
             'Nama KK', 'No KK', 'Nama ART', 'NIK', 'Umur', 'Keberadaan', 'Profesi', 'Tanggal Lahir',
-            'Daya Terpasang', 'Jumlah Meteran', 'Jumlah AC', 'Daftar Remark', 'Running Time',
+            'Daya Terpasang', 'Jumlah Meteran', 'Jumlah AC', 'Sumber Penerangan', 'Jumlah Mobil', 'Nilai Mobil', 'Jumlah Duplikasi NIK',
+            'Daftar Remark', 'Running Time', 'Sheet Asal',
             'PIC (PML Organik)', 'Tindak Lanjut', 'Hasil Pemeriksaan', 'Catatan', 'Ditandai Oleh', 'Waktu Tindak Lanjut', 'Link Edit FASIH',
         ];
         $teks = ['Assignment ID', 'ID SubSLS (Level 6)', 'No KK', 'NIK'];
@@ -353,12 +353,13 @@ class SosekDetail extends Component
 
         $r = 2;
         foreach ($rows as $i => $m) {
-            $j = $jenisOpt[$m->jenis] ?? null;
+            $j = $m->jenis_info;
             $vals = [
                 $i + 1, $j ? $j['no'] . '. ' . $j['label'] : $m->jenis, $m->nilai_anomali, $m->assignment_id,
                 $m->nmkec_display, $m->nmdesa_display, $m->nama_sls, $m->region_code,
                 $m->nama_kk, $m->no_kk, $m->nama_art, $m->nik, $m->umur, $m->keberadaan, $m->profesi, $m->tgl_lahir,
-                $m->daya_terpasang, $m->jml_meteran, $m->jumlah_ac, $m->daftar_remark, $m->running_time,
+                $m->daya_terpasang, $m->jml_meteran, $m->jumlah_ac, $m->sumber_penerangan, $m->jumlah_mobil, $m->nilai_mobil, $m->jumlah_duplikasi,
+                $m->daftar_remark, $m->running_time, $m->sheet,
                 $m->pic ?? 'Tanpa PIC',
                 $m->tindak_lanjut === 'sudah' ? 'Sudah' : 'Belum',
                 $m->tindak_lanjut === 'sudah' ? $m->status_label : '',

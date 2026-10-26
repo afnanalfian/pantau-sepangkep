@@ -16,23 +16,44 @@ class SosekMikro extends Model
         'umur' => 'integer',
         'jml_meteran' => 'integer',
         'jumlah_ac' => 'integer',
+        'jumlah_mobil' => 'integer',
+        'nilai_mobil' => 'float',
+        'jumlah_duplikasi' => 'integer',
     ];
 
     /**
-     * 7 jenis anomali. 'wajib' = kolom yang harus ada di file agar file
-     * tidak salah slot (mis. file Umur diunggah di slot AC).
+     * Semua jenis anomali yang dikenali dari workbook template.
+     *   kolom : kolom khas di header sheet (salah satu cukup) untuk mengenali sheet
+     *   judul : kata kunci di judul sheet (baris 1) sebagai penentu tambahan
      */
-    public static function jenisOptions(): array
+    public static function semuaJenis(): array
     {
         return [
-            'umur' => ['no' => 1, 'label' => 'Umur di luar rentang 0 - 95', 'singkat' => 'Umur', 'wajib' => ['umur_ak'], 'warna' => 'bg-rose-50 text-rose-700 border-rose-200'],
-            'profesi' => ['no' => 2, 'label' => 'Profesi pekerjaan utama', 'singkat' => 'Profesi', 'wajib' => ['profesi_label', 'kode_profesi'], 'warna' => 'bg-violet-50 text-violet-700 border-violet-200'],
-            'kk_prov' => ['no' => 3, 'label' => '2 digit pertama Nomor KK tidak sesuai kode provinsi', 'singkat' => 'KK ≠ prov', 'wajib' => ['no_kk'], 'warna' => 'bg-sky-50 text-sky-700 border-sky-200'],
-            'kk_kembar' => ['no' => 4, 'label' => 'Nomor KK mengandung 6 digit kembar berturut-turut', 'singkat' => 'KK kembar', 'wajib' => ['no_kk'], 'warna' => 'bg-cyan-50 text-cyan-700 border-cyan-200'],
-            'nik_prov' => ['no' => 5, 'label' => '2 digit pertama NIK tidak sesuai kode provinsi', 'singkat' => 'NIK ≠ prov', 'wajib' => ['nik_dtsen'], 'warna' => 'bg-amber-50 text-amber-700 border-amber-200'],
-            'nik_kembar' => ['no' => 6, 'label' => 'NIK mengandung 6 digit kembar berturut-turut', 'singkat' => 'NIK kembar', 'wajib' => ['nik_dtsen'], 'warna' => 'bg-orange-50 text-orange-700 border-orange-200'],
-            'ac_450' => ['no' => 7, 'label' => 'Meteran 450 watt tetapi memiliki AC lebih dari 2 unit', 'singkat' => '450W + AC', 'wajib' => ['jumlah_ac'], 'warna' => 'bg-emerald-50 text-emerald-700 border-emerald-200'],
+            'umur' => ['no' => 1, 'label' => 'Umur di luar rentang 0 - 95', 'singkat' => 'Umur', 'warna' => 'bg-rose-50 text-rose-700 border-rose-200',
+                'kolom' => ['umur_ak'], 'judul' => ['umur']],
+            'profesi' => ['no' => 2, 'label' => 'Profesi pekerjaan utama', 'singkat' => 'Profesi', 'warna' => 'bg-violet-50 text-violet-700 border-violet-200',
+                'kolom' => ['kode_profesi', 'profesi_label'], 'judul' => ['profesi']],
+            'kk_prov' => ['no' => 3, 'label' => '2 digit pertama Nomor KK tidak sesuai kode provinsi', 'singkat' => 'KK ≠ prov', 'warna' => 'bg-sky-50 text-sky-700 border-sky-200',
+                'kolom' => ['kode_prov_kk'], 'judul' => ['nomor kk', 'provinsi']],
+            'kk_kembar' => ['no' => 4, 'label' => 'Nomor KK mengandung 6 digit kembar berturut-turut', 'singkat' => 'KK kembar', 'warna' => 'bg-cyan-50 text-cyan-700 border-cyan-200',
+                'kolom' => [], 'judul' => ['nomor kk', 'kembar']],
+            'nik_prov' => ['no' => 5, 'label' => '2 digit pertama NIK tidak sesuai kode provinsi', 'singkat' => 'NIK ≠ prov', 'warna' => 'bg-amber-50 text-amber-700 border-amber-200',
+                'kolom' => [], 'judul' => ['nik', 'provinsi']],
+            'nik_kembar' => ['no' => 6, 'label' => 'NIK mengandung 6 digit kembar berturut-turut', 'singkat' => 'NIK kembar', 'warna' => 'bg-orange-50 text-orange-700 border-orange-200',
+                'kolom' => ['tgl_lahir', 'thn_lahir'], 'judul' => ['nik', 'kembar']],
+            'ac_450' => ['no' => 7, 'label' => 'Meteran 450 watt tetapi memiliki AC lebih dari 2 unit', 'singkat' => '450W + AC', 'warna' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                'kolom' => ['jumlah_ac'], 'judul' => ['450']],
+            'penerangan_mobil' => ['no' => 8, 'label' => 'Sumber penerangan utama bukan listrik, tetapi memiliki mobil', 'singkat' => 'Non-listrik + mobil', 'warna' => 'bg-lime-50 text-lime-700 border-lime-200',
+                'kolom' => ['sumber_penerangan_value', 'jumlah_mobil', 'jumlah_mobil_efektif'], 'judul' => ['penerangan']],
+            'nik_duplikat' => ['no' => 9, 'label' => 'NIK duplikat nasional', 'singkat' => 'NIK duplikat', 'warna' => 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200',
+                'kolom' => ['jumlah_duplikasi_nasional'], 'judul' => ['duplikat']],
         ];
+    }
+
+    /** Jenis yang aktif (dipakai upload, filter, dashboard). Atur di config/sosek.php -> jenis_nonaktif. */
+    public static function jenisOptions(): array
+    {
+        return array_diff_key(static::semuaJenis(), array_flip(config('sosek.jenis_nonaktif', [])));
     }
 
     public static function statusOptions(): array
@@ -54,7 +75,7 @@ class SosekMikro extends Model
 
     public function getJenisInfoAttribute(): array
     {
-        return static::jenisOptions()[$this->jenis] ?? ['no' => '?', 'label' => $this->jenis, 'singkat' => $this->jenis, 'warna' => 'bg-slate-100 text-slate-600 border-slate-200'];
+        return static::semuaJenis()[$this->jenis] ?? ['no' => '?', 'label' => $this->jenis, 'singkat' => $this->jenis, 'warna' => 'bg-slate-100 text-slate-600 border-slate-200'];
     }
 
     /** Nama yang paling relevan: nama ART (DTSEN) bila ada, kalau tidak nama KK */
