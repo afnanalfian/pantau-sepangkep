@@ -41,6 +41,9 @@ use App\Livewire\NtbFlag3\NtbFlag3Detail;
 use App\Livewire\NtbFlag3\NtbFlag3List;
 use App\Livewire\NtbFlag3\NtbFlag3Upload;
 use App\Livewire\NtbFlag3\NtbFlag3GantiRasio;
+use App\Livewire\Sosek\SosekDetail;
+use App\Livewire\Sosek\SosekList;
+use App\Livewire\Sosek\SosekUpload;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -126,6 +129,11 @@ Route::middleware(['role:pegawai,inda,anomali,qg'])->prefix('portal')->name('peg
     Route::get('/pendapatan-sejuta', SejutaList::class)->name('pendapatan-sejuta');
     Route::get('/pendapatan-sejuta/upload', SejutaUpload::class)->name('pendapatan-sejuta.upload');
     Route::get('/pendapatan-sejuta/{batch}', SejutaDetail::class)->name('pendapatan-sejuta.detail');
+
+    // Anomali Sosek
+    Route::get('/anomali-sosek', SosekList::class)->name('sosek');
+    Route::get('/anomali-sosek/upload', SosekUpload::class)->name('sosek.upload');
+    Route::get('/anomali-sosek/{batch}', SosekDetail::class)->name('sosek.detail')->whereNumber('batch');
 
     // Quality Gates - semua role tampil, hanya qg/admin yang CRUD struktur
     Route::get('/quality-gates', QgManager::class)->name('qg');
