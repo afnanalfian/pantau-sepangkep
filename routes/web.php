@@ -44,6 +44,9 @@ use App\Livewire\NtbFlag3\NtbFlag3GantiRasio;
 use App\Livewire\Sosek\SosekDetail;
 use App\Livewire\Sosek\SosekList;
 use App\Livewire\Sosek\SosekUpload;
+use App\Livewire\KbliKeliru\KbliKeliruDetail;
+use App\Livewire\KbliKeliru\KbliKeliruList;
+use App\Livewire\KbliKeliru\KbliKeliruUpload;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -94,7 +97,7 @@ Route::middleware(['role:pegawai,inda,anomali,qg'])->prefix('portal')->name('peg
     Route::get('/ntb-negatif', NtbNegatifList::class)->name('ntb-negatif');
     Route::get('/ntb-negatif/upload', NtbNegatifUpload::class)->name('ntb-negatif.upload');
     Route::get('/ntb-negatif/{batch}', NtbNegatifDetail::class)->name('ntb-negatif.detail');
-    
+
     // Cek KBLI
     Route::get('/cek-kbli', KbliList::class)->name('cek-kbli');
     Route::get('/cek-kbli/upload', KbliUpload::class)->name('cek-kbli.upload');
@@ -114,12 +117,12 @@ Route::middleware(['role:pegawai,inda,anomali,qg'])->prefix('portal')->name('peg
     Route::get('/pemindahan-pendapatan', PemindahanList::class)->name('pemindahan-pendapatan');
     Route::get('/pemindahan-pendapatan/upload', PemindahanUpload::class)->name('pemindahan-pendapatan.upload');
     Route::get('/pemindahan-pendapatan/{batch}', PemindahanDetail::class)->name('pemindahan-pendapatan.detail');
-    
+
     // Anomali Flag Rasio 3 (172 UB, 173 UM)
     Route::get('/flag-rasio-3', FlagRasio3List::class)->name('flag-rasio3');
     Route::get('/flag-rasio-3/upload', FlagRasio3Upload::class)->name('flag-rasio3.upload');
     Route::get('/flag-rasio-3/{batch}', FlagRasio3Detail::class)->name('flag-rasio3.detail');
-    
+
     // Matching ASN Pangkep
     Route::get('/matching-asn', MatchingAsnList::class)->name('matching-asn');
     Route::get('/matching-asn/upload', MatchingAsnUpload::class)->name('matching-asn.upload');
@@ -134,6 +137,11 @@ Route::middleware(['role:pegawai,inda,anomali,qg'])->prefix('portal')->name('peg
     Route::get('/anomali-sosek', SosekList::class)->name('sosek');
     Route::get('/anomali-sosek/upload', SosekUpload::class)->name('sosek.upload');
     Route::get('/anomali-sosek/{batch}', SosekDetail::class)->name('sosek.detail')->whereNumber('batch');
+
+    // KBLI Keliru (di dalam group pegawai.)
+    Route::get('/kbli-keliru', KbliKeliruList::class)->name('kbli-keliru');
+    Route::get('/kbli-keliru/upload', KbliKeliruUpload::class)->name('kbli-keliru.upload');
+    Route::get('/kbli-keliru/{batch}', KbliKeliruDetail::class)->name('kbli-keliru.detail')->whereNumber('batch');
 
     // Quality Gates - semua role tampil, hanya qg/admin yang CRUD struktur
     Route::get('/quality-gates', QgManager::class)->name('qg');
