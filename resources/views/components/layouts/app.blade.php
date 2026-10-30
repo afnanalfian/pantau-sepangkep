@@ -30,7 +30,7 @@
         // ['route' => 'pegawai.qna', 'label' => 'QnA', 'icon' => 'chat', 'roles' => ['admin', 'inda']],
         // ['route' => 'pegawai.pengumuman', 'label' => 'Pengumuman', 'icon' => 'megaphone', 'roles' => null],
         // ['route' => 'pegawai.ntb-flag3', 'label' => 'Anomali NTB Flag 3', 'icon' => 'alert', 'roles' => null],
-        ['route' => 'pegawai.kbli-keliru', 'label' => 'KBLI Keliru', 'icon' => 'alert', 'archive' => null],
+        ['route' => 'pegawai.kbli-keliru', 'label' => 'KBLI Keliru', 'icon' => 'archive', 'roles' => null],
         ['route' => 'pegawai.sosek', 'label' => 'Anomali Sosek', 'icon' => 'megaphone', 'roles' => null],
         // ['route' => 'pegawai.matching-asn', 'label' => 'Matching ASN Pangkep', 'icon' => 'alert', 'roles' => null],
         ['route' => 'pegawai.anomali', 'label' => 'Anomali', 'icon' => 'alert', 'roles' => null],
